@@ -8,7 +8,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final T? initialItem;
   final bool isApiLoading;
   final Widget? addButton;
-  final bool filedReadOnly;
+  final bool fieldReadOnly;
   final Text? errorMessage;
   final bool canShowButton;
   final TextStyle textStyle;
@@ -17,7 +17,6 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Widget? loaderWidget;
   final double? overlayHeight;
   final Offset? dropdownOffset;
-  final EdgeInsets? menuMargin;
   final Color? cursorErrorColor;
   final EdgeInsets? listPadding;
   final double? errorWidgetHeight;
@@ -32,7 +31,6 @@ class OverlayBuilder<T> extends StatefulWidget {
     super.key,
     this.renderBox,
     this.addButton,
-    this.menuMargin,
     this.listPadding,
     this.initialItem,
     this.cursorRadius,
@@ -49,7 +47,7 @@ class OverlayBuilder<T> extends StatefulWidget {
     required this.onChanged,
     required this.controller,
     this.isApiLoading = false,
-    this.filedReadOnly = false,
+    this.fieldReadOnly = false,
     this.canShowButton = false,
     required this.textController,
     required this.listItemBuilder,
@@ -212,7 +210,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                   key: key2,
                   height: calculateHeight() + 4,
                   width: MediaQuery.sizeOf(context).width,
-                  margin: widget.menuMargin ?? EdgeInsets.zero,
                   child: widget.isApiLoading
                       ? loaderWidget()
                       : (widget.item).isEmpty

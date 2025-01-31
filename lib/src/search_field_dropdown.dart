@@ -9,7 +9,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   final List<T> item;
 
   /// Use this for[TextFormField] text form fields you want to read only.
-  final bool filedReadOnly;
+  final bool fieldReadOnly;
 
   /// call when change drop-down opening offset
   final Offset? dropdownOffset;
@@ -222,7 +222,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     required this.onChanged,
     required this.controller,
     this.isApiLoading = false,
-    this.filedReadOnly = false,
+    this.fieldReadOnly = false,
     this.canShowButton = false,
     required this.listItemBuilder,
     required this.filedDecoration,
@@ -341,7 +341,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                   listPadding: widget.listPadding,
                   errorWidgetHeight: widget.errorWidgetHeight,
                   dropdownOffset: widget.dropdownOffset,
-                  filedReadOnly: widget.filedReadOnly,
+                  fieldReadOnly: widget.fieldReadOnly,
                   isApiLoading: widget.isApiLoading,
                   addButton: widget.addButton,
                   canShowButton: widget.canShowButton,
@@ -351,7 +351,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                   cursorRadius: widget.cursorRadius,
                   cursorErrorColor: widget.cursorErrorColor,
                   initialItem: widget.initialItem,
-                  menuMargin: widget.menuMargin,
                   renderBox: renderBox,
                 )
               ],
@@ -380,7 +379,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             keyboardType: widget.keyboardType,
             inputFormatters: widget.inputFormatters,
             textAlign: widget.textAlign,
-            readOnly: isTypingDisabled ? true : widget.filedReadOnly,
+            readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
             focusNode: widget.focusNode,
             controller: textController,
             showCursor: widget.showCursor,

@@ -237,7 +237,7 @@ class DropDownClass extends StatelessWidget {
 |-----------------------|------------------------------|-------------------------------------------------------|
 | `key`                 | `GlobalKey<SearchFieldDropdownState>()`| Use for maintain state.                    |
 | `item`                | `List<T>?`                  | List of dropdown items to display.                    |
-| `filedReadOnly`       | `bool`                      | Makes `TextFormField` readonly.                       |
+| `fieldReadOnly`       | `bool`                      | Makes `TextFormField` readonly.                       |
 | `readOnly`            | `bool`                      | Makes dropdown readonly.                              |
 | `initialItem`         | `T?`                        | Initial value for the dropdown.                       |
 | `isApiLoading`        | `bool`                      | Indicates if the API is loading.                      |
@@ -265,7 +265,6 @@ class DropDownClass extends StatelessWidget {
 | `selectedItemBuilder` | `SelectedItemBuilder<T?>?`  | Custom builder for the selected item.                 |
 | `onSearch`            | `Future<List<T>> Function(String)` | Callback for API-based search functionality.   |
 | `listPadding`         | `EdgeInsets?`              | Sets padding for the list view.                       |
-| `menuMargin`          | `EdgeInsets?`              | Sets margin for the dropdown item container.          |
 | `canShowButton`       | `bool`                      | Toggles the visibility of the add button.             |
 | `textAlign`           | `TextAlign`                 | Aligns the text in the search field.                  |
 | `keyboardType`        | `TextInputType?`            | Sets the input type for the `TextFormField`.          |
