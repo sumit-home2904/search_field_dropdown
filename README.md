@@ -33,12 +33,12 @@ import 'package:search_field_dropdown/search_field_dropdown.dart';
 ## Example usage
 ### **1.Basic SearchFieldDropdown**
 
-A GlobalKey<FormFiledDropDownState> is used to uniquely identify and manage the state of a FormFiledDropDown 
+A GlobalKey`<FormFiledDropDownState>` is used to uniquely identify and manage the state of a FormFiledDropDown 
 widget, allowing you to interact with its internal state (e.g., selecting an item or retrieving the selected value) 
 from outside the widget.
 
 **Purpose:**
-    The GlobalKey<FormFiledDropDownState> allows you to access the state of the FormFiledDropDown widget,
+    The GlobalKey`<FormFiledDropDownState>` allows you to access the state of the FormFiledDropDown widget,
     which is useful when you need to control the dropdown’s behavior programmatically. By associating a key 
     with the FormFiledDropDown, you can call methods on its state, trigger a rebuild, or update its selected 
     value from a parent widget or another part of your app.

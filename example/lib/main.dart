@@ -135,7 +135,6 @@ class _DropDownClassState extends State<DropDownClass> {
             children: [
               Row(
                 children: [
-
                   Expanded(
                       child: SearchFieldDropdown<CountryModel>(
                     focusNode: focusNode,
@@ -149,15 +148,13 @@ class _DropDownClassState extends State<DropDownClass> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Colors.blueAccent),
-                      boxShadow:  [
-                        BoxShadow(
-                          color: Colors.blue.shade100,
-                          blurRadius: 4,
-                          spreadRadius: 5,
-                          offset: const Offset(0, 0)
-                        )
-                      ]
-                    ),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.blue.shade100,
+                              blurRadius: 4,
+                              spreadRadius: 5,
+                              offset: const Offset(0, 0))
+                        ]),
                     filedDecoration: InputDecoration(
                       suffixIcon: IntrinsicWidth(
                         child: Row(
@@ -242,8 +239,6 @@ class _DropDownClassState extends State<DropDownClass> {
                     },
                   )),
                   const SizedBox(width: 15),
-
-
                   Expanded(
                       child: SearchFieldDropdown<StatesModel>(
                     focusNode: focusNode2,
@@ -257,8 +252,7 @@ class _DropDownClassState extends State<DropDownClass> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.blueAccent),
-                      boxShadow: []
-                    ),
+                        boxShadow: []),
                     filedDecoration: InputDecoration(
                       suffixIcon: IntrinsicWidth(
                         child: Row(
@@ -326,17 +320,15 @@ class _DropDownClassState extends State<DropDownClass> {
                         ),
                       );
                     },
-                        selectedItemBuilder: (context, item) {
-                          return Text(
-                            item.name,
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w400),
-                          );
-                        },
+                    selectedItemBuilder: (context, item) {
+                      return Text(
+                        item.name,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400),
+                      );
+                    },
                   )),
-
                   const SizedBox(width: 15),
-
                   Expanded(
                       child: SearchFieldDropdown<CityModel>(
                     focusNode: focusNode3,
@@ -411,17 +403,16 @@ class _DropDownClassState extends State<DropDownClass> {
                         ),
                       );
                     },
-                        selectedItemBuilder: (context, item) {
-                          return Text(
-                            item.name,
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w400),
-                          );
-                        },
+                    selectedItemBuilder: (context, item) {
+                      return Text(
+                        item.name,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400),
+                      );
+                    },
                   ))
                 ],
               ),
-
             ],
           ),
         ),
