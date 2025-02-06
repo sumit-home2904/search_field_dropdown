@@ -381,7 +381,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           },
           child: TextFormField(
             key: textFieldKey,
-            enableInteractiveSelection: widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
+            enableInteractiveSelection:
+                widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
             style: widget.textStyle,
             keyboardType: widget.keyboardType,
             inputFormatters: widget.inputFormatters,
