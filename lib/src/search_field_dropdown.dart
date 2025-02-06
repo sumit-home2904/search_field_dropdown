@@ -15,6 +15,11 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   final Offset? dropdownOffset;
   final double? errorWidgetHeight;
 
+  /// when you have text fields, users can usually long-press to select text,
+  /// which brings up the toolbar with options like copy, paste, etc. So,
+  /// [enableInteractiveSelection] probably relates to enabling or disabling that behavior.
+  final bool? enableInteractiveSelection;
+
   /// Use this for [FromFieldDropDown] to read only from the dropdown you want.
   final bool readOnly;
 
@@ -221,12 +226,13 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     required this.textStyle,
     required this.onChanged,
     required this.controller,
+    this.selectedItemBuilder,
     this.isApiLoading = false,
     this.fieldReadOnly = false,
     this.canShowButton = false,
     required this.listItemBuilder,
     required this.filedDecoration,
-    this.selectedItemBuilder,
+    this.enableInteractiveSelection,
     this.textAlign = TextAlign.start,
   });
 
@@ -375,6 +381,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           },
           child: TextFormField(
             key: textFieldKey,
+            enableInteractiveSelection: widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
             style: widget.textStyle,
             keyboardType: widget.keyboardType,
             inputFormatters: widget.inputFormatters,

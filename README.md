@@ -233,42 +233,43 @@ class DropDownClass extends StatelessWidget {
 
 ## Properties
 
-| Property              | Type                         | Description                                           |
-|-----------------------|------------------------------|-------------------------------------------------------|
-| `key`                 | `GlobalKey<SearchFieldDropdownState>()`| Use for maintain state.                    |
-| `item`                | `List<T>?`                  | List of dropdown items to display.                    |
-| `fieldReadOnly`       | `bool`                      | Makes `TextFormField` readonly.                       |
-| `readOnly`            | `bool`                      | Makes dropdown readonly.                              |
-| `initialItem`         | `T?`                        | Initial value for the dropdown.                       |
-| `isApiLoading`        | `bool`                      | Indicates if the API is loading.                      |
-| `dropdownOffset`      | `bool`                      | Change drop-down opening offset                       |
-| `showCursor`          | `bool?`                     | Toggles the cursor visibility.                        |
-| `cursorColor`         | `Color?`                    | Changes the cursor color.                             |
-| `cursorHeight`        | `double?`                   | Sets the cursor height.                               |
-| `cursorWidth`         | `double?`                   | Sets the cursor width.                                |
-| `errorWidgetHeight`   | `double?`                   | Sets the error widget height.                         |
-| `cursorRadius`        | `Radius?`                   | Sets the cursor border radius.                        |
-| `cursorErrorColor`    | `Color?`                    | Sets the cursor error color.                          |
-| `textStyle`           | `TextStyle`                 | Styles the search or selected text.                   |
-| `loaderWidget`        | `Widget?`                   | Custom widget to show during API loading.             |
-| `focusNode`           | `FocusNode?`                | Manages focus for searchable dropdowns.               |
-| `errorMessage`        | `Text?`                     | Custom error message when no items are found.         |
-| `overlayHeight`       | `double?`                   | Height of the dropdown overlay.                       |
-| `addButton`           | `Widget?`                   | Adds a custom button for additional functionality.    |
-| `onChanged`           | `Function(T? value)`        | Callback triggered when an item is selected.          |
-| `menuDecoration`      | `BoxDecoration?`            | Custom decoration for the dropdown menu.              |
-| `filedDecoration`     | `InputDecoration`           | Decoration for the `TextFormField`.                   |
-| `onTap`               | `Future<List<T>> Function()`| Loads items dynamically for the dropdown.             |
-| `autovalidateMode`    | `AutovalidateMode?`         | Enables validation listener when items change.        |
-| `controller`          | `OverlayPortalController`   | Controls dropdown visibility programmatically.        |
-| `listItemBuilder`     | `ListItemBuilder<T>`        | Custom builder for dropdown items.                    |
-| `selectedItemBuilder` | `SelectedItemBuilder<T?>?`  | Custom builder for the selected item.                 |
-| `onSearch`            | `Future<List<T>> Function(String)` | Callback for API-based search functionality.   |
-| `listPadding`         | `EdgeInsets?`              | Sets padding for the list view.                       |
-| `canShowButton`       | `bool`                      | Toggles the visibility of the add button.             |
-| `textAlign`           | `TextAlign`                 | Aligns the text in the search field.                  |
-| `keyboardType`        | `TextInputType?`            | Sets the input type for the `TextFormField`.          |
-| `maxLine`             | `int?`                      | Limits the maximum number of text lines.              |
-| `maxLength`           | `int?`                      | Limits the maximum number of characters.              |
-| `inputFormatters`     | `List<TextInputFormatter>?` | Applies input formatting rules to the `TextFormField`.|
-| `validator`           | `String? Function(String?)` | Validates the dropdown value.                         |
+| Property              | Type                                   | Description                                           |
+|-----------------------|----------------------------------------|-------------------------------------------------------|
+| `key`                 | `GlobalKey<SearchFieldDropdownState>()` | Use for maintain state.                    |
+| `item`                | `List<T>?`                             | List of dropdown items to display.                    |
+| `fieldReadOnly`       | `bool`                                 | Makes `TextFormField` readonly.                       |
+| `readOnly`            | `bool`                                 | Makes dropdown readonly.                              |
+| `initialItem`         | `T?`                                   | Initial value for the dropdown.                       |
+| `isApiLoading`        | `bool`                                 | Indicates if the API is loading.                      |
+| `dropdownOffset`      | `bool`                                 | Change drop-down opening offset                       |
+| `showCursor`          | `bool?`                                | Toggles the cursor visibility.                        |
+| `cursorColor`         | `Color?`                               | Changes the cursor color.                             |
+| `cursorHeight`        | `double?`                              | Sets the cursor height.                               |
+| `cursorWidth`         | `double?`                              | Sets the cursor width.                                |
+| `errorWidgetHeight`   | `double?`                              | Sets the error widget height.                         |
+| `cursorRadius`        | `Radius?`                              | Sets the cursor border radius.                        |
+| `cursorErrorColor`    | `Color?`                               | Sets the cursor error color.                          |
+| `textStyle`           | `TextStyle`                            | Styles the search or selected text.                   |
+| `loaderWidget`        | `Widget?`                              | Custom widget to show during API loading.             |
+| `focusNode`           | `FocusNode?`                           | Manages focus for searchable dropdowns.               |
+| `errorMessage`        | `Text?`                                | Custom error message when no items are found.         |
+| `overlayHeight`       | `double?`                              | Height of the dropdown overlay.                       |
+| `addButton`           | `Widget?`                              | Adds a custom button for additional functionality.    |
+| `onChanged`           | `Function(T? value)`                   | Callback triggered when an item is selected.          |
+| `menuDecoration`      | `BoxDecoration?`                       | Custom decoration for the dropdown menu.              |
+| `filedDecoration`     | `InputDecoration`                      | Decoration for the `TextFormField`.                   |
+| `onTap`               | `Future<List<T>> Function()`           | Loads items dynamically for the dropdown.             |
+| `autovalidateMode`    | `AutovalidateMode?`                    | Enables validation listener when items change.        |
+| `controller`          | `OverlayPortalController`              | Controls dropdown visibility programmatically.        |
+| `listItemBuilder`     | `ListItemBuilder<T>`                   | Custom builder for dropdown items.                    |
+| `selectedItemBuilder` | `SelectedItemBuilder<T?>?`             | Custom builder for the selected item.                 |
+| `onSearch`            | `Future<List<T>> Function(String)`     | Callback for API-based search functionality.   |
+| `listPadding`         | `EdgeInsets?`                          | Sets padding for the list view.                       |
+| `canShowButton`       | `bool`                                 | Toggles the visibility of the add button.             |
+| `textAlign`           | `TextAlign`                            | Aligns the text in the search field.                  |
+| `keyboardType`        | `TextInputType?`                       | Sets the input type for the `TextFormField`.          |
+| `maxLine`             | `int?`                                 | Limits the maximum number of text lines.              |
+| `maxLength`           | `int?`                                 | Limits the maximum number of characters.              |
+| `inputFormatters`     | `List<TextInputFormatter>?`            | Applies input formatting rules to the `TextFormField`.|
+| `validator`           | `String? Function(String?)`            | Validates the dropdown value.                         |
+| `enableInteractiveSelection`           | `bool?`             | Enables or disables text selection in TextFormField     |

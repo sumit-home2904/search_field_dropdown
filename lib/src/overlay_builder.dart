@@ -201,7 +201,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             key: key1,
             height: calculateHeight() + 4,
             width: widget.renderBox?.size.width ?? c.maxWidth,
-            decoration: widget.menuDecoration,
+            decoration: menuDecoration(),
             child: AnimatedSection(
               expand: true,
               animationDismissed: widget.controller.hide,
@@ -341,7 +341,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   Widget loaderWidget() {
     return Container(
       alignment: Alignment.center,
-      decoration: menuDecoration(),
       height: calculateHeight(),
       child: Center(
         child: widget.loaderWidget ?? const CircularProgressIndicator(),
