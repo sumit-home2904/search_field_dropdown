@@ -1,3 +1,6 @@
+# 1.0.2
+focusNode issue fixed
+
 # 1.0.1
 bug fixed
 

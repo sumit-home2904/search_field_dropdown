@@ -411,7 +411,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   textFiledOnTap() async {
     if (!(widget.readOnly)) {
       widget.controller.show();
-      if (widget.onTap != null) {
+      if (widget.onTap != null && widget.focusNode == null) {
         items = await widget.onTap!();
       }
       setState(() {});
