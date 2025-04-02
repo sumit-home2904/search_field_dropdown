@@ -246,7 +246,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   T? selectedItem;
   late List<T> items;
-  late List<FocusNode> itemsFocusNodeList;
   final layerLink = LayerLink();
   final GlobalKey textFieldKey = GlobalKey();
   bool isTypingDisabled = false;
@@ -263,7 +262,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
             textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
             items = await widget.onTap!();
-            itemsFocusNodeList = List.generate(items.length, (index) => FocusNode());
           }
         }
       });
@@ -271,7 +269,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       items = widget.item;
-      itemsFocusNodeList = List.generate(items.length, (index) => FocusNode());
 
       textController.text =
           selectedItemConvertor(listData: widget.initialItem) ?? "";
@@ -294,7 +291,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         widget.onSearch != oldWidget.onSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         items = widget.item;
-        itemsFocusNodeList = List.generate(items.length, (index) => FocusNode());
         setState(() {});
       });
     }
@@ -353,21 +349,20 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                   addButton: widget.addButton,
                   controller: widget.controller,
                   textController: textController,
-                  listPadding: widget.listPadding,
                   initialItem: widget.initialItem,
+                  listPadding: widget.listPadding,
                   isApiLoading: widget.isApiLoading,
-                  cursorRadius: widget.cursorRadius,
                   loaderWidget: widget.loaderWidget,
                   errorMessage: widget.errorMessage,
-                  canShowButton: widget.canShowButton,
+                  cursorRadius: widget.cursorRadius,
                   fieldReadOnly: widget.fieldReadOnly,
                   overlayHeight: widget.overlayHeight,
+                  canShowButton: widget.canShowButton,
                   menuDecoration: widget.menuDecoration,
                   dropdownOffset: widget.dropdownOffset,
-                  itemsFocusNodeList: itemsFocusNodeList,
                   listItemBuilder: widget.listItemBuilder,
-                  scrollController: widget.scrollController,
                   cursorErrorColor: widget.cursorErrorColor,
+                  scrollController: widget.scrollController,
                   errorWidgetHeight: widget.errorWidgetHeight,
                   selectedItemBuilder: widget.selectedItemBuilder,
                 )
@@ -427,7 +422,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     if (!(widget.readOnly)) {
       widget.controller.show();
-      if (widget.onTap != null) {
+      if (widget.onTap != null && widget.focusNode == null) {
         items = await widget.onTap!();
       }
       setState(() {});
