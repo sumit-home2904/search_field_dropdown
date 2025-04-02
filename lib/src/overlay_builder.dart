@@ -22,11 +22,12 @@ class OverlayBuilder<T> extends StatefulWidget {
   final double? errorWidgetHeight;
   final Function(T? value) onChanged;
   final BoxDecoration? menuDecoration;
+  final List<FocusNode> itemsFocusNodeList;
   final OverlayPortalController controller;
+  final ScrollController? scrollController;
   final ListItemBuilder<T> listItemBuilder;
   final TextEditingController textController;
   final SelectedItemBuilder<T>? selectedItemBuilder;
-
   const OverlayBuilder({
     super.key,
     this.renderBox,
@@ -40,18 +41,20 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.overlayHeight,
     this.menuDecoration,
     this.dropdownOffset,
+    this.scrollController,
     this.cursorErrorColor,
     this.errorWidgetHeight,
     required this.textStyle,
     required this.layerLink,
     required this.onChanged,
     required this.controller,
+    this.selectedItemBuilder,
     this.isApiLoading = false,
     this.fieldReadOnly = false,
     this.canShowButton = false,
+    required this.itemsFocusNodeList,
     required this.textController,
     required this.listItemBuilder,
-    this.selectedItemBuilder,
   });
 
   @override
@@ -243,11 +246,12 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             Expanded(
               child: ListView.builder(
                 shrinkWrap: true,
-                physics: const ClampingScrollPhysics(),
-                addAutomaticKeepAlives: false,
                 addRepaintBoundaries: false,
-                padding: widget.listPadding ?? EdgeInsets.zero,
+                addAutomaticKeepAlives: false,
                 itemCount: widget.item.length,
+                controller: widget.scrollController,
+                physics: const ClampingScrollPhysics(),
+                padding: widget.listPadding ?? EdgeInsets.zero,
                 itemBuilder: (_, index) {
                   bool selected = isItemSelected(index);
                   return InkWell(

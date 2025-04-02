@@ -195,6 +195,8 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// default). If [controller] is null, then a [TextEditingController]
   /// will be constructed automatically and its `text` will be initialized
   /// to [initialItem] or the empty string.
+  ///
+  final ScrollController? scrollController;
 
   const SearchFieldDropdown({
     super.key,
@@ -220,6 +222,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     this.dropdownOffset,
     this.inputFormatters,
     this.cursorErrorColor,
+    this.scrollController,
     this.readOnly = false,
     this.errorWidgetHeight,
     this.autovalidateMode,
@@ -243,6 +246,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   T? selectedItem;
   late List<T> items;
+  late List<FocusNode> itemsFocusNodeList;
   final layerLink = LayerLink();
   final GlobalKey textFieldKey = GlobalKey();
   bool isTypingDisabled = false;
@@ -256,7 +260,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       widget.focusNode!.addListener(() async {
         if (widget.focusNode!.hasFocus) {
           if (widget.onTap != null) {
+
+            textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
             items = await widget.onTap!();
+            itemsFocusNodeList = List.generate(items.length, (index) => FocusNode());
           }
         }
       });
@@ -264,6 +271,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       items = widget.item;
+      itemsFocusNodeList = List.generate(items.length, (index) => FocusNode());
+
       textController.text =
           selectedItemConvertor(listData: widget.initialItem) ?? "";
       selectedItem = widget.initialItem;
@@ -285,6 +294,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         widget.onSearch != oldWidget.onSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         items = widget.item;
+        itemsFocusNodeList = List.generate(items.length, (index) => FocusNode());
         setState(() {});
       });
     }
@@ -335,29 +345,31 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             child: Stack(
               children: [
                 OverlayBuilder(
-                  selectedItemBuilder: widget.selectedItemBuilder,
-                  textController: textController,
-                  controller: widget.controller,
-                  textStyle: widget.textStyle,
-                  onChanged: widget.onChanged,
-                  listItemBuilder: widget.listItemBuilder,
                   item: items,
                   layerLink: layerLink,
-                  overlayHeight: widget.overlayHeight,
-                  listPadding: widget.listPadding,
-                  errorWidgetHeight: widget.errorWidgetHeight,
-                  dropdownOffset: widget.dropdownOffset,
-                  fieldReadOnly: widget.fieldReadOnly,
-                  isApiLoading: widget.isApiLoading,
+                  renderBox: renderBox,
+                  onChanged: widget.onChanged,
+                  textStyle: widget.textStyle,
                   addButton: widget.addButton,
-                  canShowButton: widget.canShowButton,
+                  controller: widget.controller,
+                  textController: textController,
+                  listPadding: widget.listPadding,
+                  initialItem: widget.initialItem,
+                  isApiLoading: widget.isApiLoading,
+                  cursorRadius: widget.cursorRadius,
                   loaderWidget: widget.loaderWidget,
                   errorMessage: widget.errorMessage,
+                  canShowButton: widget.canShowButton,
+                  fieldReadOnly: widget.fieldReadOnly,
+                  overlayHeight: widget.overlayHeight,
                   menuDecoration: widget.menuDecoration,
-                  cursorRadius: widget.cursorRadius,
+                  dropdownOffset: widget.dropdownOffset,
+                  itemsFocusNodeList: itemsFocusNodeList,
+                  listItemBuilder: widget.listItemBuilder,
+                  scrollController: widget.scrollController,
                   cursorErrorColor: widget.cursorErrorColor,
-                  initialItem: widget.initialItem,
-                  renderBox: renderBox,
+                  errorWidgetHeight: widget.errorWidgetHeight,
+                  selectedItemBuilder: widget.selectedItemBuilder,
                 )
               ],
             ),
@@ -409,6 +421,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// drop-down on tap function
   textFiledOnTap() async {
+
+
+    textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
+
     if (!(widget.readOnly)) {
       widget.controller.show();
       if (widget.onTap != null) {
