@@ -1,5 +1,5 @@
 # 1.0.3
-bug fixed
+Shortcut added for item selection on Mac, Windows, and web; mouse hover feature implemented.
 
 # 1.0.2
 focusNode issue fixed
