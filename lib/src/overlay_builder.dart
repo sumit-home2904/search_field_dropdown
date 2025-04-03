@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
+import 'package:flutter/services.dart';
 
+// ignore: must_be_immutable
 class OverlayBuilder<T> extends StatefulWidget {
-  final LayerLink layerLink;
   final List<T> item;
+  final LayerLink layerLink;
+  final GlobalKey itemListKey;
+  final ScrollController scrollController;
   final T? initialItem;
+  int focusedIndex = 0;
   final bool isApiLoading;
   final Widget? addButton;
   final bool fieldReadOnly;
+  bool isKeyboardNavigation = false;
   final Text? errorMessage;
   final bool canShowButton;
   final TextStyle textStyle;
@@ -22,13 +28,12 @@ class OverlayBuilder<T> extends StatefulWidget {
   final double? errorWidgetHeight;
   final Function(T? value) onChanged;
   final BoxDecoration? menuDecoration;
-  final ScrollController? scrollController;
   final OverlayPortalController controller;
   final ListItemBuilder<T> listItemBuilder;
   final TextEditingController textController;
   final SelectedItemBuilder<T>? selectedItemBuilder;
 
-  const OverlayBuilder({
+  OverlayBuilder({
     super.key,
     this.renderBox,
     this.addButton,
@@ -36,12 +41,15 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.initialItem,
     this.cursorRadius,
     this.loaderWidget,
+    required this.itemListKey,
+    required this.isKeyboardNavigation,
+    required this.focusedIndex,
+    required this.scrollController,
     this.errorMessage,
     required this.item,
     this.overlayHeight,
     this.menuDecoration,
     this.dropdownOffset,
-    this.scrollController,
     this.cursorErrorColor,
     this.errorWidgetHeight,
     required this.textStyle,
@@ -64,16 +72,16 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   T? selectedItem;
   bool displayOverlayBottom = true;
 
-  final GlobalKey itemListKey = GlobalKey();
   final GlobalKey errorButtonKey = GlobalKey();
   final GlobalKey addButtonKey = GlobalKey();
   final key1 = GlobalKey(), key2 = GlobalKey();
+
 
   /// calculate drop-down height base on item length
   double baseOnHeightCalculate() {
     try {
       final context = addButtonKey.currentContext;
-      final itemKeyContext = itemListKey.currentContext;
+      final itemKeyContext = widget.itemListKey.currentContext;
       final errorKeyContext = errorButtonKey.currentContext;
       double addButtonHeight = 0;
       double errorButtonHeight = 0;
@@ -141,17 +149,20 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       if (widget.initialItem != null) {
         selectedItem = (widget.initialItem as T);
       }
+
       checkRenderObjects(); // Start checking render objects.
+      // listFocusNode.requestFocus();
     });
   }
+
 
   /// use for move up and down when not scroll available
   void checkRenderObjects() {
     if (key1.currentContext != null && key2.currentContext != null) {
       final RenderBox? render1 =
-          key1.currentContext?.findRenderObject() as RenderBox?;
+      key1.currentContext?.findRenderObject() as RenderBox?;
       final RenderBox? render2 =
-          key2.currentContext?.findRenderObject() as RenderBox?;
+      key2.currentContext?.findRenderObject() as RenderBox?;
 
       if (render1 != null && render2 != null) {
         final screenHeight = MediaQuery.of(context).size.height;
@@ -197,7 +208,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         link: widget.layerLink,
         offset: setOffset(),
         followerAnchor:
-            displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
+        displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
         child: LayoutBuilder(builder: (context, c) {
           return Container(
             key: key1,
@@ -215,8 +226,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                   child: widget.isApiLoading
                       ? loaderWidget()
                       : (widget.item).isEmpty
-                          ? emptyErrorWidget()
-                          : uiListWidget()),
+                      ? emptyErrorWidget()
+                      : uiListWidget()),
             ),
           );
         }));
@@ -225,6 +236,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   /// This function returns the UI of drop-down tiles when the user clicks on
   /// the drop-down. After that, how the drop-down will look is all defined in
   /// this function.
+  ///
+  // bool isKeyboardNavigation = false;
   Widget uiListWidget() {
     return NotificationListener<OverscrollIndicatorNotification>(
       onNotification: (notification) {
@@ -233,7 +246,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       },
       child: Container(
         height: calculateHeight(),
-        // decoration: menuDecoration(),
         child: Column(
           children: [
             if (widget.canShowButton)
@@ -243,27 +255,40 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                     child: widget.addButton ?? SizedBox(key: addButtonKey)),
             const SizedBox(height: 2),
             Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                controller: widget.scrollController,
-                physics: const ClampingScrollPhysics(),
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: false,
-                padding: widget.listPadding ?? EdgeInsets.zero,
-                itemCount: widget.item.length,
-                itemBuilder: (_, index) {
-                  bool selected = isItemSelected(index);
-                  return InkWell(
-                    key: index == 0 ? itemListKey : null,
-                    onTap: () => onItemSelected(index),
-                    child: widget.listItemBuilder(
-                      context,
-                      widget.item[index],
-                      selected,
-                    ),
-                  );
-                },
-              ),
+                child:ListView.builder(
+                  controller: widget.scrollController,
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: false,
+                  padding: widget.listPadding ?? EdgeInsets.zero,
+                  itemCount: widget.item.length,
+                  itemBuilder: (_, index) {
+                    bool selected = widget.focusedIndex==index;
+                    return MouseRegion(
+                      onHover: (event) {
+                        widget.isKeyboardNavigation = false;
+                        setState(() {});
+                      },
+                      onEnter: (event) {
+                        if (!widget.isKeyboardNavigation) {
+                          setState(() {
+                            widget.focusedIndex = index;
+                          });
+                        }
+                      },
+                      child: InkWell(
+                        key: widget.focusedIndex == index ? widget.itemListKey : null,
+                        onTap: () => onItemSelected(index),
+                        child: widget.listItemBuilder(
+                          context,
+                          widget.item[index],
+                          selected,
+                        ),
+                      ),
+                    );
+                  },
+                )
             ),
           ],
         ),
