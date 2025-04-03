@@ -258,6 +258,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
 
+  void changeFocusIndex(int index) {
+    focusedIndex=index;
+  }
   @override
   void initState() {
     super.initState();
@@ -396,6 +399,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     textController.text =
         selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
     widget.onChanged(items[index]);
+    focusedIndex=0;
     setState(() {});
   }
 
@@ -491,6 +495,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     isKeyboardNavigation: isKeyboardNavigation,
                     itemListKey: itemListKey,
                     onChanged: widget.onChanged,
+                    changeIndex: changeFocusIndex,
+                    onItemSelected: onItemSelected,
                     textStyle: widget.textStyle,
                     addButton: widget.addButton,
                     controller: widget.controller,
@@ -563,7 +569,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   /// drop-down on tap function
   textFiledOnTap() async {
 
-
+    focusedIndex=0;
     textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
 
     if (!(widget.readOnly)) {

@@ -32,6 +32,8 @@ class OverlayBuilder<T> extends StatefulWidget {
   final ListItemBuilder<T> listItemBuilder;
   final TextEditingController textController;
   final SelectedItemBuilder<T>? selectedItemBuilder;
+  final Function(int) changeIndex;
+  final Function(int) onItemSelected;
 
   OverlayBuilder({
     super.key,
@@ -52,6 +54,8 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.dropdownOffset,
     this.cursorErrorColor,
     this.errorWidgetHeight,
+    required this.changeIndex,
+    required this.onItemSelected,
     required this.textStyle,
     required this.layerLink,
     required this.onChanged,
@@ -274,12 +278,13 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                         if (!widget.isKeyboardNavigation) {
                           setState(() {
                             widget.focusedIndex = index;
+                            widget.changeIndex(index);
                           });
                         }
                       },
                       child: InkWell(
                         key: widget.focusedIndex == index ? widget.itemListKey : null,
-                        onTap: () => onItemSelected(index),
+                        onTap: () => widget.onItemSelected(index),
                         child: widget.listItemBuilder(
                           context,
                           widget.item[index],
@@ -326,14 +331,14 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   }
 
   /// This method is called when the user selects a drop-down value item from the list
-  onItemSelected(index) {
-    widget.controller.hide();
-    selectedItem = widget.item[index];
-    widget.textController.text =
-        selectedItemConvertor(selectedItem) ?? "${selectedItem}";
-    widget.onChanged(widget.item[index]);
-    setState(() {});
-  }
+  // onItemSelected(index) {
+  //   widget.controller.hide();
+  //   selectedItem = widget.item[index];
+  //   widget.textController.text =
+  //       selectedItemConvertor(selectedItem) ?? "${selectedItem}";
+  //   widget.onChanged(widget.item[index]);
+  //   setState(() {});
+  // }
 
   String? selectedItemConvertor(T? listData) {
     if (listData != null && widget.selectedItemBuilder != null) {
