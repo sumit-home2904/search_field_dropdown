@@ -258,7 +258,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
 
+  void changeFocusIndex(int index) {
+    focusedIndex = index;
+    setState(() {});
+  }
 
+
+  void changeKeyBool(bool newValue) {
+    isKeyboardNavigation = newValue;
+    setState(() {});
+  }
 
   @override
   void initState() {
@@ -309,14 +318,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   @override
   void dispose() {
     super.dispose();
-  }
-
-  void changeFocusIndex(int index) {
-    focusedIndex=index;
-    setState(() {
-
-    });
-    print("focusedIndex $focusedIndex");
   }
 
   String? selectedItemConvertor({T? listData}) {
@@ -370,17 +371,26 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
 
     // print("Focused Index: $focusedIndex");
-    print("First Visible Index: $firstVisibleIndex");
+    // print("First Visible Index: $firstVisibleIndex");
     // print("maxVisibleItems Index: $maxVisibleItems");
     // print("Last Visible Index: $lastVisibleIndex");
 
     // Scroll down logic
     if (focusedIndex > lastVisibleIndex) {
-      scrollController.jumpTo(
-        (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
-        // duration: Duration(milliseconds: 200),
-        // curve: Curves.easeInOut,
-      );
+        if (focusedIndex == items.length - 1) {
+          if (scrollController.hasClients) {
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 50),
+              curve: Curves.easeInOut,
+            );
+          }
+
+        } else {
+          scrollController.jumpTo(
+            (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
+          );
+        }
     }
 
     // Scroll up logic (only scroll when reaching firstVisibleIndex)
@@ -497,6 +507,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     item: items,
                     layerLink: layerLink,
                     renderBox: renderBox,
+                    changeKeyBool: changeKeyBool,
                     scrollController: scrollController,
                     focusedIndex: focusedIndex,
                     isKeyboardNavigation: isKeyboardNavigation,

@@ -12,11 +12,11 @@ class OverlayBuilder<T> extends StatefulWidget {
   final GlobalKey itemListKey;
   final ScrollController scrollController;
   final T? initialItem;
-  int focusedIndex = 0;
+  final int focusedIndex;
   final bool isApiLoading;
   final Widget? addButton;
   final bool fieldReadOnly;
-  bool isKeyboardNavigation = false;
+  final bool isKeyboardNavigation;
   final Text? errorMessage;
   final bool canShowButton;
   final TextStyle textStyle;
@@ -36,6 +36,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final SelectedItemBuilder<T>? selectedItemBuilder;
   final Function(int) changeIndex;
   final Function(int) onItemSelected;
+  final Function(bool) changeKeyBool;
 
   OverlayBuilder({
     super.key,
@@ -49,6 +50,7 @@ class OverlayBuilder<T> extends StatefulWidget {
     required this.isKeyboardNavigation,
     required this.focusedIndex,
     required this.scrollController,
+    required this.changeKeyBool,
     this.errorMessage,
     required this.item,
     this.overlayHeight,
@@ -296,12 +298,11 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                       // print(index);
                       return MouseRegion(
                         onHover: (event) {
-                          widget.isKeyboardNavigation = false;
-                          setState(() {});
-                        },
+                        widget.changeKeyBool(false);
+                      },
                         onEnter: (event) {
                           if (!widget.isKeyboardNavigation) {
-                              widget.changeIndex(index);
+                            widget.changeIndex(index);
                           }
                         },
                         child: InkWell(
