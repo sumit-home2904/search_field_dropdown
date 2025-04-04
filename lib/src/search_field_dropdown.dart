@@ -273,25 +273,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   void initState() {
     super.initState();
     items = [];
-    print("object 1 ---->");
-    // widget.controller.show();
 
     if (widget.focusNode != null) {
-      // print("object 2 ---->");
 
-      // widget.focusNode!.requestFocus();
       widget.focusNode!.addListener(() async {
-        // print("object 3 ---->");
 
         if (widget.focusNode!.hasFocus) {
-          // print("object 7 ---->");
-
           if (widget.onTap != null) {
-            // print("object 8 ---->");
 
             textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
             items = await widget.onTap!();
-            // print("object 9 ---->");
 
           }
         }
@@ -299,7 +290,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // print("object 4 ---->");
 
       items = widget.item;
 
@@ -307,17 +297,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           selectedItemConvertor(listData: widget.initialItem) ?? "";
       selectedItem = widget.initialItem;
 
-      // print("object 5 ---->");
-
     });
 
-    // print("object 6 ---->");
-
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   String? selectedItemConvertor({T? listData}) {
@@ -362,18 +343,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   void scrollToFocusedItem() {
     RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    // print("objectdffd${renderBox.size.height}");
+
     final double itemHeight = renderBox.size.height;
-    // print("itemHeight $itemHeight");
-    // print("scrollController.offset ${scrollController.offset}");
+
     final int maxVisibleItems = ((widget.overlayHeight??150) / itemHeight).floor(); // How many items fit in the view
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
-
-    // print("Focused Index: $focusedIndex");
-    // print("First Visible Index: $firstVisibleIndex");
-    // print("maxVisibleItems Index: $maxVisibleItems");
-    // print("Last Visible Index: $lastVisibleIndex");
 
     // Scroll down logic
     if (focusedIndex > lastVisibleIndex) {
@@ -401,15 +376,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       }
       scrollController.jumpTo(
         focusedIndex * itemHeight,
-        // duration: Duration(milliseconds: 200),
-        // curve: Curves.easeInOut,
       );
     }
   }
 
 
 
-
+  /// This method is called when the user selects a drop-down value item from the list
   onItemSelected(index) {
     widget.controller.hide();
     selectedItem = items[index];
@@ -426,11 +399,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       bindings: {
 
         LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
-          // print("arrowUp --> ");
-          // if(widget.focusNode != null){
-          //   widget.focusNode!.requestFocus();
-          // }
-
           setState(() {
             isKeyboardNavigation = true;
             if (focusedIndex > 0) {
@@ -443,28 +411,17 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           });
         },
         LogicalKeySet(LogicalKeyboardKey.arrowDown): () {
-          // if(widget.focusNode != null){
-          //   widget.focusNode!.requestFocus();
-          // }
-          // print("arrowDown 1");
           setState(() {
             isKeyboardNavigation = true;
 
-            // print("widget.item.length - 1 ${items.length - 1}");
-            // print("widget.item.length - 1 ${focusedIndex}");
-
             if (focusedIndex < items.length - 1) {
-              // print("arrowDown 2");
               focusedIndex++;
               scrollToFocusedItem();
             }else{
-              // print("arrowDown 3");
               focusedIndex=0;
               RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
               scrollController. jumpTo(
                 focusedIndex * renderBox!.size.height, // Adjust height per item
-                // duration: Duration(milliseconds: 10),
-                // curve: Curves.easeInOut,
               );
               scrollToFocusedItem();
             }
@@ -606,8 +563,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     scrollController. jumpTo(
       focusedIndex * renderBox!.size.height, // Adjust height per item
-      // duration: Duration(milliseconds: 10),
-      // curve: Curves.easeInOut,
     );
     if (value.isEmpty) {
       onSearchCalled("");

@@ -1,11 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
-import 'package:flutter/services.dart';
 
-// ignore: must_be_immutable
 class OverlayBuilder<T> extends StatefulWidget {
   final List<T> item;
   final LayerLink layerLink;
@@ -38,7 +35,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
 
-  OverlayBuilder({
+  const OverlayBuilder({
     super.key,
     this.renderBox,
     this.addButton,
@@ -159,7 +156,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       }
 
       checkRenderObjects(); // Start checking render objects.
-      // listFocusNode.requestFocus();
     });
   }
 
@@ -211,7 +207,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
   @override
   Widget build(BuildContext context) {
-    // print(calculateHeight());
     return CompositedTransformFollower(
         link: widget.layerLink,
         offset: setOffset(),
@@ -267,22 +262,16 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                   onPointerSignal: (event) {
                     SearchTimerMethod(milliseconds: 300).run(() {
 
-
                     RenderBox? renderBox = widget.itemListKey.currentContext?.findRenderObject() as RenderBox?;
                     final double itemHeight = renderBox?.size.height??30;
 
                     final double firstVisibleIndex = widget.scrollController.offset / itemHeight;
-                    print("firstVisibleIndex $firstVisibleIndex");
 
                     final int museCourse=((event.localPosition.dy/ itemHeight)-1).ceil();
-                    print("museCourse $museCourse");
 
                     final int scrollIndex =firstVisibleIndex.toInt()+museCourse;
-                    print("scrollIndex $scrollIndex");
                     widget.changeIndex(scrollIndex);
 
-
-                    print(event.localPosition.dy/ itemHeight);
                     },);
                   },
                   child: ListView.builder(
@@ -353,16 +342,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     return Offset(widget.dropdownOffset?.dx ?? 0,
         displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10);
   }
-
-  /// This method is called when the user selects a drop-down value item from the list
-  // onItemSelected(index) {
-  //   widget.controller.hide();
-  //   selectedItem = widget.item[index];
-  //   widget.textController.text =
-  //       selectedItemConvertor(selectedItem) ?? "${selectedItem}";
-  //   widget.onChanged(widget.item[index]);
-  //   setState(() {});
-  // }
 
   String? selectedItemConvertor(T? listData) {
     if (listData != null && widget.selectedItemBuilder != null) {
