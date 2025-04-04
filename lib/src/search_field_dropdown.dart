@@ -253,6 +253,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final layerLink = LayerLink();
   final GlobalKey textFieldKey = GlobalKey();
   final GlobalKey itemListKey = GlobalKey();
+  final GlobalKey addButtonKey = GlobalKey();
 
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
@@ -334,11 +335,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   void scrollToFocusedItem() {
     RenderBox? renderBox =
         itemListKey.currentContext?.findRenderObject() as RenderBox?;
+
+    RenderBox? addButtonRender =
+    addButtonKey.currentContext?.findRenderObject() as RenderBox?;
+
     if (renderBox == null) return;
 
     final double itemHeight = renderBox.size.height;
+    final double addButtonHeight = addButtonRender?.size.height??0;
 
-    final int maxVisibleItems = ((widget.overlayHeight ?? 150) / itemHeight)
+    final int maxVisibleItems = (((widget.overlayHeight ?? 150)-addButtonHeight) / itemHeight)
         .floor(); // How many items fit in the view
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
@@ -458,6 +464,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     focusedIndex: focusedIndex,
                     isKeyboardNavigation: isKeyboardNavigation,
                     itemListKey: itemListKey,
+                    addButtonKey: addButtonKey,
                     onChanged: widget.onChanged,
                     changeIndex: changeFocusIndex,
                     onItemSelected: onItemSelected,

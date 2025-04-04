@@ -145,6 +145,11 @@ class _DropDownClassState extends State<DropDownClass> {
                     controller: countryController,
                     initialItem: selectedCountry,
                     item: countryList,
+                    canShowButton: true,
+                    addButton:  Container(
+                      height: 30,
+                      color: Colors.yellowAccent,
+                    ),
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),
                     menuDecoration: BoxDecoration(

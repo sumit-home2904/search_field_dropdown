@@ -7,6 +7,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final List<T> item;
   final LayerLink layerLink;
   final GlobalKey itemListKey;
+  final GlobalKey addButtonKey;
   final ScrollController scrollController;
   final T? initialItem;
   final int focusedIndex;
@@ -44,6 +45,7 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.cursorRadius,
     this.loaderWidget,
     required this.itemListKey,
+    required this.addButtonKey,
     required this.isKeyboardNavigation,
     required this.focusedIndex,
     required this.scrollController,
@@ -78,13 +80,12 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   bool displayOverlayBottom = true;
 
   final GlobalKey errorButtonKey = GlobalKey();
-  final GlobalKey addButtonKey = GlobalKey();
   final key1 = GlobalKey(), key2 = GlobalKey();
 
   /// calculate drop-down height base on item length
   double baseOnHeightCalculate() {
     try {
-      final context = addButtonKey.currentContext;
+      final context = widget.addButtonKey.currentContext;
       final itemKeyContext = widget.itemListKey.currentContext;
       final errorKeyContext = errorButtonKey.currentContext;
       double addButtonHeight = 0;
@@ -252,8 +253,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             if (widget.canShowButton)
               if (widget.addButton != null)
                 SizedBox(
-                    key: addButtonKey,
-                    child: widget.addButton ?? SizedBox(key: addButtonKey)),
+                    key: widget.addButtonKey,
+                    child: widget.addButton ?? SizedBox(key: widget.addButtonKey)),
             const SizedBox(height: 2),
             Expanded(
                 child: Listener(
@@ -364,8 +365,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
           if (widget.canShowButton)
             if (widget.addButton != null)
               SizedBox(
-                  key: addButtonKey,
-                  child: widget.addButton ?? SizedBox(key: addButtonKey)),
+                  key: widget.addButtonKey,
+                  child: widget.addButton ?? SizedBox(key: widget.addButtonKey)),
           Spacer(),
           widget.errorMessage ?? const Text("No options"),
           Spacer(),
