@@ -141,6 +141,7 @@ class _DropDownClassState extends State<DropDownClass> {
                   Expanded(
                       child: SearchFieldDropdown<CountryModel>(
                     focusNode: focusNode,
+                    enableInteractiveSelection: true,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     controller: countryController,
                     initialItem: selectedCountry,

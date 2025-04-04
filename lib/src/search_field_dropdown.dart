@@ -558,12 +558,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// drop-down search or text form filed on change function
   onChange(value) async {
-    focusedIndex = 0;
     RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
+    if(renderBox != null){
+      focusedIndex = 0;
+      scrollController. jumpTo(
+        focusedIndex * renderBox.size.height, // Adjust height per item
+      );
+    }
 
-    scrollController. jumpTo(
-      focusedIndex * renderBox!.size.height, // Adjust height per item
-    );
     if (value.isEmpty) {
       onSearchCalled("");
     } else {
