@@ -259,14 +259,20 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final TextEditingController textController = TextEditingController();
 
   void changeFocusIndex(int index) {
-    focusedIndex=index;
+    focusedIndex = index;
+    setState(() {});
   }
+
+
+  void changeKeyBool(bool newValue) {
+    isKeyboardNavigation = newValue;
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
     items = [];
-    print("object 1 ---->");
-    // widget.controller.show();
 
     if (widget.focusNode != null) {
       // print("object 2 ---->");
@@ -302,8 +308,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       // print("object 5 ---->");
 
     });
-
-    // print("object 6 ---->");
 
   }
 
@@ -369,24 +373,38 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     // Scroll down logic
     if (focusedIndex > lastVisibleIndex) {
-      scrollController.jumpTo(
-        (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
-        // duration: Duration(milliseconds: 200),
-        // curve: Curves.easeInOut,
-      );
+        if (focusedIndex == items.length - 1) {
+          if (scrollController.hasClients) {
+            scrollController.animateTo(
+              scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 50),
+              curve: Curves.easeInOut,
+            );
+          }
+
+        } else {
+          scrollController.jumpTo(
+            (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
+          );
+        }
     }
 
     // Scroll up logic (only scroll when reaching firstVisibleIndex)
     else if (focusedIndex < firstVisibleIndex) {
+      print("lastVisibleIndex 2");
+
       if (focusedIndex >= lastVisibleIndex - (maxVisibleItems - 1)) {
+        print("lastVisibleIndex 3");
+
         // Do NOT scroll yet, allow selection to move up first
         return;
       }
       scrollController.jumpTo(
         focusedIndex * itemHeight,
-        // duration: Duration(milliseconds: 200),
-        // curve: Curves.easeInOut,
       );
+
+      print("lastVisibleIndex 4");
+
     }
   }
 
@@ -409,40 +427,39 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       bindings: {
 
         LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
-          // print("arrowUp --> ");
-          // if(widget.focusNode != null){
-          //   widget.focusNode!.requestFocus();
-          // }
+          print("arrowUp --> ");
 
           setState(() {
             isKeyboardNavigation = true;
             if (focusedIndex > 0) {
+              print("arrowUp if --> ");
+
               focusedIndex--;
               scrollToFocusedItem();
             }else{
-              focusedIndex=(items.length - 1);
+              print("arrowUp else --> ");
+
+              focusedIndex = (items.length - 1);
               scrollToFocusedItem();
             }
           });
         },
         LogicalKeySet(LogicalKeyboardKey.arrowDown): () {
-          // if(widget.focusNode != null){
-          //   widget.focusNode!.requestFocus();
-          // }
-          // print("arrowDown 1");
+
+          print("arrowDown 1");
           setState(() {
             isKeyboardNavigation = true;
 
-            // print("widget.item.length - 1 ${items.length - 1}");
-            // print("widget.item.length - 1 ${focusedIndex}");
+            print("widget.item.length - 1 ${items.length - 1}");
+            print("widget.item.length - 1 ${focusedIndex}");
 
             if (focusedIndex < items.length - 1) {
               // print("arrowDown 2");
               focusedIndex++;
               scrollToFocusedItem();
             }else{
-              // print("arrowDown 3");
-              focusedIndex=0;
+              print("arrowDown 3");
+              focusedIndex = 0;
               RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
               scrollController. jumpTo(
                 focusedIndex * renderBox!.size.height, // Adjust height per item
@@ -490,6 +507,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     item: items,
                     layerLink: layerLink,
                     renderBox: renderBox,
+                    changeKeyBool: changeKeyBool,
                     scrollController: scrollController,
                     focusedIndex: focusedIndex,
                     isKeyboardNavigation: isKeyboardNavigation,

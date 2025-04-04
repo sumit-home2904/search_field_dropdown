@@ -1,8 +1,8 @@
 # search_field_dropdown 🛠️
 
-A highly customizable dropdown widget for Flutter with powerful features like search, API integration, 
-custom UI support, and validation.
-
+SearchFieldDropdown widget implementation in Flutter. This widget provides a customizable search 
+field with a dropdown menu that can be populated either statically or dynamically through an 
+API call. It includes various customization options and supports keyboard navigation.
 ---
 
 ## Features
