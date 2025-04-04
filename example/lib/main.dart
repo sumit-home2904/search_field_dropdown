@@ -135,6 +135,7 @@ class _DropDownClassState extends State<DropDownClass> {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
+              SizedBox(height: 200,),
               Row(
                 children: [
                   Expanded(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
@@ -259,40 +261,61 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                     child: widget.addButton ?? SizedBox(key: addButtonKey)),
             const SizedBox(height: 2),
             Expanded(
-                child:ListView.builder(
-                  controller: widget.scrollController,
-                  shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: false,
-                  padding: widget.listPadding ?? EdgeInsets.zero,
-                  itemCount: widget.item.length,
-                  itemBuilder: (_, index) {
-                    bool selected = widget.focusedIndex==index;
-                    return MouseRegion(
-                      onHover: (event) {
-                        widget.isKeyboardNavigation = false;
-                        setState(() {});
-                      },
-                      onEnter: (event) {
-                        if (!widget.isKeyboardNavigation) {
-                          setState(() {
-                            widget.focusedIndex = index;
-                            widget.changeIndex(index);
-                          });
-                        }
-                      },
-                      child: InkWell(
-                        key: widget.focusedIndex == index ? widget.itemListKey : null,
-                        onTap: () => widget.onItemSelected(index),
-                        child: widget.listItemBuilder(
-                          context,
-                          widget.item[index],
-                          selected,
-                        ),
-                      ),
-                    );
+                child:Listener(
+                  onPointerSignal: (event) {
+                    SearchTimerMethod(milliseconds: 300).run(() {
+
+
+                    RenderBox? renderBox = widget.itemListKey.currentContext?.findRenderObject() as RenderBox?;
+                    final double itemHeight = renderBox?.size.height??30;
+
+                    final double firstVisibleIndex = widget.scrollController.offset / itemHeight;
+                    print("firstVisibleIndex $firstVisibleIndex");
+
+                    final int museCourse=((event.localPosition.dy/ itemHeight)-1).ceil();
+                    print("museCourse $museCourse");
+
+                    final int scrollIndex =firstVisibleIndex.toInt()+museCourse;
+                    print("scrollIndex $scrollIndex");
+                    widget.changeIndex(scrollIndex);
+
+
+                    print(event.localPosition.dy/ itemHeight);
+                    },);
                   },
+                  child: ListView.builder(
+                    controller: widget.scrollController,
+                    shrinkWrap: true,
+                    physics: const ClampingScrollPhysics(),
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: false,
+                    padding: widget.listPadding ?? EdgeInsets.zero,
+                    itemCount: widget.item.length,
+                    itemBuilder: (_, index) {
+                      bool selected = widget.focusedIndex==index;
+                      // print(index);
+                      return MouseRegion(
+                        onHover: (event) {
+                          widget.isKeyboardNavigation = false;
+                          setState(() {});
+                        },
+                        onEnter: (event) {
+                          if (!widget.isKeyboardNavigation) {
+                              widget.changeIndex(index);
+                          }
+                        },
+                        child: InkWell(
+                          key: widget.focusedIndex == index ? widget.itemListKey : null,
+                          onTap: () => widget.onItemSelected(index),
+                          child: widget.listItemBuilder(
+                            context,
+                            widget.item[index],
+                            selected,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 )
             ),
           ],
@@ -381,3 +404,19 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     );
   }
 }
+
+class SearchTimerMethod {
+  final int milliseconds;
+  late VoidCallback action;
+  Timer? timer;
+
+  SearchTimerMethod({required this.milliseconds});
+
+  run(VoidCallback action) {
+    if (null != timer) {
+      timer!.cancel();
+    }
+    timer = Timer(Duration(milliseconds: milliseconds), action);
+  }
+}
+

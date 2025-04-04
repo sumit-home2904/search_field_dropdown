@@ -258,9 +258,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
 
-  void changeFocusIndex(int index) {
-    focusedIndex=index;
-  }
+
+
   @override
   void initState() {
     super.initState();
@@ -310,6 +309,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void changeFocusIndex(int index) {
+    focusedIndex=index;
+    setState(() {
+
+    });
+    print("focusedIndex $focusedIndex");
   }
 
   String? selectedItemConvertor({T? listData}) {
@@ -363,7 +370,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
 
     // print("Focused Index: $focusedIndex");
-    // print("First Visible Index: $firstVisibleIndex");
+    print("First Visible Index: $firstVisibleIndex");
     // print("maxVisibleItems Index: $maxVisibleItems");
     // print("Last Visible Index: $lastVisibleIndex");
 
