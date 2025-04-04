@@ -242,7 +242,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 }
 
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
-
   T? selectedItem;
   late List<T> items;
 
@@ -263,7 +262,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     setState(() {});
   }
 
-
   void changeKeyBool(bool newValue) {
     isKeyboardNavigation = newValue;
     setState(() {});
@@ -275,30 +273,26 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     items = [];
 
     if (widget.focusNode != null) {
-
       widget.focusNode!.addListener(() async {
-
         if (widget.focusNode!.hasFocus) {
           if (widget.onTap != null) {
-
-            textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
+            textController.selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: textController.text.length,
+            );
             items = await widget.onTap!();
-
           }
         }
       });
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-
       items = widget.item;
 
       textController.text =
           selectedItemConvertor(listData: widget.initialItem) ?? "";
       selectedItem = widget.initialItem;
-
     });
-
   }
 
   String? selectedItemConvertor({T? listData}) {
@@ -337,35 +331,33 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     });
   }
 
-
-
-
   void scrollToFocusedItem() {
-    RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
+    RenderBox? renderBox =
+        itemListKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final double itemHeight = renderBox.size.height;
 
-    final int maxVisibleItems = ((widget.overlayHeight??150) / itemHeight).floor(); // How many items fit in the view
+    final int maxVisibleItems = ((widget.overlayHeight ?? 150) / itemHeight)
+        .floor(); // How many items fit in the view
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
 
     // Scroll down logic
     if (focusedIndex > lastVisibleIndex) {
-        if (focusedIndex == items.length - 1) {
-          if (scrollController.hasClients) {
-            scrollController.animateTo(
-              scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 50),
-              curve: Curves.easeInOut,
-            );
-          }
-
-        } else {
-          scrollController.jumpTo(
-            (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
+      if (focusedIndex == items.length - 1) {
+        if (scrollController.hasClients) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 50),
+            curve: Curves.easeInOut,
           );
         }
+      } else {
+        scrollController.jumpTo(
+          (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
+        );
+      }
     }
 
     // Scroll up logic (only scroll when reaching firstVisibleIndex)
@@ -380,8 +372,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     }
   }
 
-
-
   /// This method is called when the user selects a drop-down value item from the list
   onItemSelected(index) {
     widget.controller.hide();
@@ -389,7 +379,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     textController.text =
         selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
     widget.onChanged(items[index]);
-    focusedIndex=0;
+    focusedIndex = 0;
     setState(() {});
   }
 
@@ -397,15 +387,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   Widget build(BuildContext context) {
     return CallbackShortcuts(
       bindings: {
-
         LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
           setState(() {
             isKeyboardNavigation = true;
             if (focusedIndex > 0) {
               focusedIndex--;
               scrollToFocusedItem();
-            }else{
-              focusedIndex=(items.length - 1);
+            } else {
+              focusedIndex = (items.length - 1);
               scrollToFocusedItem();
             }
           });
@@ -417,22 +406,22 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             if (focusedIndex < items.length - 1) {
               focusedIndex++;
               scrollToFocusedItem();
-            }else{
-              focusedIndex=0;
-              RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
-              scrollController. jumpTo(
+            } else {
+              focusedIndex = 0;
+              RenderBox? renderBox =
+                  itemListKey.currentContext?.findRenderObject() as RenderBox?;
+              scrollController.jumpTo(
                 focusedIndex * renderBox!.size.height, // Adjust height per item
               );
-              scrollToFocusedItem();
+              // scrollToFocusedItem();
             }
           });
         },
         LogicalKeySet(LogicalKeyboardKey.enter): () {
-          if(focusedIndex >= 0){
+          if (focusedIndex >= 0) {
             onItemSelected(focusedIndex);
           }
         },
-
       },
       child: OverlayPortal(
         controller: widget.controller,
@@ -543,9 +532,11 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// drop-down on tap function
   textFiledOnTap() async {
-
-    focusedIndex=0;
-    textController.selection = TextSelection(  baseOffset: 0,  extentOffset: textController.text.length,);
+    focusedIndex = 0;
+    textController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: textController.text.length,
+    );
 
     if (!(widget.readOnly)) {
       widget.controller.show();
@@ -558,10 +549,11 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// drop-down search or text form filed on change function
   onChange(value) async {
-    RenderBox? renderBox = itemListKey.currentContext?.findRenderObject() as RenderBox?;
-    if(renderBox != null){
+    RenderBox? renderBox =
+        itemListKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
       focusedIndex = 0;
-      scrollController. jumpTo(
+      scrollController.jumpTo(
         focusedIndex * renderBox.size.height, // Adjust height per item
       );
     }

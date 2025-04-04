@@ -81,7 +81,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   final GlobalKey addButtonKey = GlobalKey();
   final key1 = GlobalKey(), key2 = GlobalKey();
 
-
   /// calculate drop-down height base on item length
   double baseOnHeightCalculate() {
     try {
@@ -159,14 +158,13 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     });
   }
 
-
   /// use for move up and down when not scroll available
   void checkRenderObjects() {
     if (key1.currentContext != null && key2.currentContext != null) {
       final RenderBox? render1 =
-      key1.currentContext?.findRenderObject() as RenderBox?;
+          key1.currentContext?.findRenderObject() as RenderBox?;
       final RenderBox? render2 =
-      key2.currentContext?.findRenderObject() as RenderBox?;
+          key2.currentContext?.findRenderObject() as RenderBox?;
 
       if (render1 != null && render2 != null) {
         final screenHeight = MediaQuery.of(context).size.height;
@@ -211,7 +209,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         link: widget.layerLink,
         offset: setOffset(),
         followerAnchor:
-        displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
+            displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
         child: LayoutBuilder(builder: (context, c) {
           return Container(
             key: key1,
@@ -229,8 +227,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                   child: widget.isApiLoading
                       ? loaderWidget()
                       : (widget.item).isEmpty
-                      ? emptyErrorWidget()
-                      : uiListWidget()),
+                          ? emptyErrorWidget()
+                          : uiListWidget()),
             ),
           );
         }));
@@ -258,56 +256,59 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                     child: widget.addButton ?? SizedBox(key: addButtonKey)),
             const SizedBox(height: 2),
             Expanded(
-                child:Listener(
-                  onPointerSignal: (event) {
-                    SearchTimerMethod(milliseconds: 300).run(() {
+                child: Listener(
+              onPointerSignal: (event) {
+                SearchTimerMethod(milliseconds: 300).run(() {
+                  RenderBox? renderBox = widget.itemListKey.currentContext
+                      ?.findRenderObject() as RenderBox?;
+                  final double itemHeight = renderBox?.size.height ?? 30;
 
-                    RenderBox? renderBox = widget.itemListKey.currentContext?.findRenderObject() as RenderBox?;
-                    final double itemHeight = renderBox?.size.height??30;
+                  final double firstVisibleIndex =
+                      widget.scrollController.offset / itemHeight;
 
-                    final double firstVisibleIndex = widget.scrollController.offset / itemHeight;
+                  final int museCourse =
+                      ((event.localPosition.dy / itemHeight) - 1).ceil();
 
-                    final int museCourse=((event.localPosition.dy/ itemHeight)-1).ceil();
-
-                    final int scrollIndex =firstVisibleIndex.toInt()+museCourse;
-                    widget.changeIndex(scrollIndex);
-
-                    },);
-                  },
-                  child: ListView.builder(
-                    controller: widget.scrollController,
-                    shrinkWrap: true,
-                    physics: const ClampingScrollPhysics(),
-                    addAutomaticKeepAlives: false,
-                    addRepaintBoundaries: false,
-                    padding: widget.listPadding ?? EdgeInsets.zero,
-                    itemCount: widget.item.length,
-                    itemBuilder: (_, index) {
-                      bool selected = widget.focusedIndex==index;
-                      // print(index);
-                      return MouseRegion(
-                        onHover: (event) {
-                        widget.changeKeyBool(false);
-                      },
-                        onEnter: (event) {
-                          if (!widget.isKeyboardNavigation) {
-                            widget.changeIndex(index);
-                          }
-                        },
-                        child: InkWell(
-                          key: widget.focusedIndex == index ? widget.itemListKey : null,
-                          onTap: () => widget.onItemSelected(index),
-                          child: widget.listItemBuilder(
-                            context,
-                            widget.item[index],
-                            selected,
-                          ),
-                        ),
-                      );
+                  final int scrollIndex =
+                      firstVisibleIndex.toInt() + museCourse;
+                  widget.changeIndex(scrollIndex);
+                });
+              },
+              child: ListView.builder(
+                controller: widget.scrollController,
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(),
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
+                padding: widget.listPadding ?? EdgeInsets.zero,
+                itemCount: widget.item.length,
+                itemBuilder: (_, index) {
+                  bool selected = widget.focusedIndex == index;
+                  // print(index);
+                  return MouseRegion(
+                    onHover: (event) {
+                      widget.changeKeyBool(false);
                     },
-                  ),
-                )
-            ),
+                    onEnter: (event) {
+                      if (!widget.isKeyboardNavigation) {
+                        widget.changeIndex(index);
+                      }
+                    },
+                    child: InkWell(
+                      key: widget.focusedIndex == index
+                          ? widget.itemListKey
+                          : null,
+                      onTap: () => widget.onItemSelected(index),
+                      child: widget.listItemBuilder(
+                        context,
+                        widget.item[index],
+                        selected,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )),
           ],
         ),
       ),
@@ -399,4 +400,3 @@ class SearchTimerMethod {
     timer = Timer(Duration(milliseconds: milliseconds), action);
   }
 }
-

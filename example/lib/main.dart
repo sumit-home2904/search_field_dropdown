@@ -135,7 +135,6 @@ class _DropDownClassState extends State<DropDownClass> {
           padding: const EdgeInsets.all(8.0),
           child: Column(
             children: [
-              SizedBox(height: 200,),
               Row(
                 children: [
                   Expanded(
@@ -242,184 +241,182 @@ class _DropDownClassState extends State<DropDownClass> {
                       );
                     },
                   )),
-                  // const SizedBox(width: 15),
-                  // Expanded(
-                  //     child: SearchFieldDropdown<StatesModel>(
-                  //   focusNode: focusNode2,
-                  //   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  //   controller: stateController,
-                  //   initialItem: selectedState,
-                  //   item: tempStatesList,
-                  //   textStyle: const TextStyle(
-                  //       fontSize: 12, fontWeight: FontWeight.w400),
-                  //   menuDecoration: BoxDecoration(
-                  //       color: Colors.white,
-                  //       borderRadius: BorderRadius.circular(10),
-                  //       border: Border.all(color: Colors.blueAccent),
-                  //       boxShadow: []),
-                  //   filedDecoration: InputDecoration(
-                  //     suffixIcon: IntrinsicWidth(
-                  //       child: Row(
-                  //         children: [
-                  //           if (selectedState != null)
-                  //             InkWell(
-                  //               onTap: () {
-                  //                 setState(() {
-                  //                   selectedState = null;
-                  //                   if (selectedCountry == null)
-                  //                     tempStatesList.clear();
-                  //                 });
-                  //               },
-                  //               child: const Icon(
-                  //                 Icons.clear,
-                  //                 size: 20,
-                  //               ),
-                  //             ),
-                  //           if (selectedState != null) const SizedBox(width: 5),
-                  //           const Icon(
-                  //             Icons.arrow_drop_down_sharp,
-                  //             size: 20,
-                  //           ),
-                  //           const SizedBox(width: 8),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ),
-                  //   onChanged: (StatesModel? value) {
-                  //     setState(() {
-                  //       tempCityList = [];
-                  //       selectedCity = null;
-                  //       selectedState = value;
-                  //
-                  //       tempCityList = cityList.where((element) {
-                  //         return "${element.stateId}" == "${selectedState?.id}";
-                  //       }).toList();
-                  //     });
-                  //   },
-                  //   onSearch: (value) async {
-                  //     return statesList.where((element) {
-                  //       return element.name
-                  //           .toLowerCase()
-                  //           .contains(value.toLowerCase());
-                  //     }).toList();
-                  //   },
-                  //   listItemBuilder: (context, item, isSelected) {
-                  //     // print("isSelected $isSelected");
-                  //     int index = statesList.indexOf(item);
-                  //     return Container(
-                  //       padding: const EdgeInsets.symmetric(
-                  //           horizontal: 5, vertical: 5),
-                  //       margin:
-                  //           EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
-                  //       decoration: BoxDecoration(
-                  //           color:
-                  //               isSelected ? Colors.green : Colors.transparent,
-                  //           borderRadius: BorderRadius.circular(2)),
-                  //       child: Text(
-                  //         item.name,
-                  //         style: TextStyle(
-                  //             fontSize: 12,
-                  //             color: isSelected ? Colors.white : Colors.black,
-                  //             fontWeight: FontWeight.w400),
-                  //       ),
-                  //     );
-                  //   },
-                  //   selectedItemBuilder: (context, item) {
-                  //     return Text(
-                  //       item.name,
-                  //       style: const TextStyle(
-                  //           fontSize: 12, fontWeight: FontWeight.w400),
-                  //     );
-                  //   },
-                  // )),
-                  // const SizedBox(width: 15),
-                  // Expanded(
-                  //     child: SearchFieldDropdown<CityModel>(
-                  //   focusNode: focusNode3,
-                  //   autovalidateMode: AutovalidateMode.onUserInteraction,
-                  //   controller: cityController,
-                  //   readOnly: tempCityList.isEmpty,
-                  //   initialItem: selectedCity,
-                  //   item: tempCityList,
-                  //   textStyle: const TextStyle(
-                  //       fontSize: 12, fontWeight: FontWeight.w400),
-                  //   menuDecoration: BoxDecoration(
-                  //       color: Colors.white,
-                  //       borderRadius: BorderRadius.circular(4),
-                  //       border: Border.all(color: Colors.blueAccent)),
-                  //   filedDecoration: InputDecoration(
-                  //     suffixIcon: IntrinsicWidth(
-                  //       child: Row(
-                  //         children: [
-                  //           if (selectedCity != null)
-                  //             InkWell(
-                  //               onTap: () {
-                  //                 setState(() {
-                  //                   selectedCity = null;
-                  //                   if (selectedState == null)
-                  //                     tempCityList.clear();
-                  //                 });
-                  //               },
-                  //               child: const Icon(
-                  //                 Icons.clear,
-                  //                 size: 20,
-                  //               ),
-                  //             ),
-                  //           if (selectedCity != null) const SizedBox(width: 5),
-                  //           const Icon(
-                  //             Icons.arrow_drop_down_sharp,
-                  //             size: 20,
-                  //           ),
-                  //           const SizedBox(width: 8),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ),
-                  //   onChanged: (CityModel? value) {
-                  //     setState(() {
-                  //       selectedCity = value;
-                  //     });
-                  //   },
-                  //   onSearch: (value) async {
-                  //     return tempCityList.where((element) {
-                  //       return element.name
-                  //           .toLowerCase()
-                  //           .contains(value.toLowerCase());
-                  //     }).toList();
-                  //   },
-                  //   listItemBuilder: (context, item, isSelected) {
-                  //     int index = cityList.indexOf(item);
-                  //     return Container(
-                  //       padding: const EdgeInsets.symmetric(
-                  //           horizontal: 5, vertical: 5),
-                  //       margin:
-                  //           EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
-                  //       decoration: BoxDecoration(
-                  //           color:
-                  //               isSelected ? Colors.green : Colors.transparent,
-                  //           borderRadius: BorderRadius.circular(2)),
-                  //       child: Text(
-                  //         item.name,
-                  //         style: TextStyle(
-                  //             fontSize: 12,
-                  //             color: isSelected ? Colors.white : Colors.black,
-                  //             fontWeight: FontWeight.w400),
-                  //       ),
-                  //     );
-                  //   },
-                  //   selectedItemBuilder: (context, item) {
-                  //     return Text(
-                  //       item.name,
-                  //       style: const TextStyle(
-                  //           fontSize: 12, fontWeight: FontWeight.w400),
-                  //     );
-                  //   },
-                  // ))
+                  const SizedBox(width: 15),
+                  Expanded(
+                      child: SearchFieldDropdown<StatesModel>(
+                    focusNode: focusNode2,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    controller: stateController,
+                    initialItem: selectedState,
+                    item: tempStatesList,
+                    textStyle: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w400),
+                    menuDecoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.blueAccent),
+                        boxShadow: []),
+                    filedDecoration: InputDecoration(
+                      suffixIcon: IntrinsicWidth(
+                        child: Row(
+                          children: [
+                            if (selectedState != null)
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    selectedState = null;
+                                    if (selectedCountry == null)
+                                      tempStatesList.clear();
+                                  });
+                                },
+                                child: const Icon(
+                                  Icons.clear,
+                                  size: 20,
+                                ),
+                              ),
+                            if (selectedState != null) const SizedBox(width: 5),
+                            const Icon(
+                              Icons.arrow_drop_down_sharp,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ),
+                      ),
+                    ),
+                    onChanged: (StatesModel? value) {
+                      setState(() {
+                        tempCityList = [];
+                        selectedCity = null;
+                        selectedState = value;
+
+                        tempCityList = cityList.where((element) {
+                          return "${element.stateId}" == "${selectedState?.id}";
+                        }).toList();
+                      });
+                    },
+                    onSearch: (value) async {
+                      return statesList.where((element) {
+                        return element.name
+                            .toLowerCase()
+                            .contains(value.toLowerCase());
+                      }).toList();
+                    },
+                    listItemBuilder: (context, item, isSelected) {
+                      // print("isSelected $isSelected");
+                      int index = statesList.indexOf(item);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 5),
+                        margin:
+                            EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
+                        decoration: BoxDecoration(
+                            color:
+                                isSelected ? Colors.green : Colors.transparent,
+                            borderRadius: BorderRadius.circular(2)),
+                        child: Text(
+                          item.name,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.w400),
+                        ),
+                      );
+                    },
+                    selectedItemBuilder: (context, item) {
+                      return Text(
+                        item.name,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400),
+                      );
+                    },
+                  )),
+                  const SizedBox(width: 15),
+                  Expanded(
+                      child: SearchFieldDropdown<CityModel>(
+                    focusNode: focusNode3,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    controller: cityController,
+                    readOnly: tempCityList.isEmpty,
+                    initialItem: selectedCity,
+                    item: tempCityList,
+                    textStyle: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w400),
+                    menuDecoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.blueAccent)),
+                    filedDecoration: InputDecoration(
+                      suffixIcon: IntrinsicWidth(
+                        child: Row(
+                          children: [
+                            if (selectedCity != null)
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    selectedCity = null;
+                                    if (selectedState == null)
+                                      tempCityList.clear();
+                                  });
+                                },
+                                child: const Icon(
+                                  Icons.clear,
+                                  size: 20,
+                                ),
+                              ),
+                            if (selectedCity != null) const SizedBox(width: 5),
+                            const Icon(
+                              Icons.arrow_drop_down_sharp,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                        ),
+                      ),
+                    ),
+                    onChanged: (CityModel? value) {
+                      setState(() {
+                        selectedCity = value;
+                      });
+                    },
+                    onSearch: (value) async {
+                      return tempCityList.where((element) {
+                        return element.name
+                            .toLowerCase()
+                            .contains(value.toLowerCase());
+                      }).toList();
+                    },
+                    listItemBuilder: (context, item, isSelected) {
+                      int index = cityList.indexOf(item);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 5),
+                        margin:
+                            EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
+                        decoration: BoxDecoration(
+                            color:
+                                isSelected ? Colors.green : Colors.transparent,
+                            borderRadius: BorderRadius.circular(2)),
+                        child: Text(
+                          item.name,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.w400),
+                        ),
+                      );
+                    },
+                    selectedItemBuilder: (context, item) {
+                      return Text(
+                        item.name,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400),
+                      );
+                    },
+                  ))
                 ],
               ),
-
             ],
-
           ),
         ),
       ),
