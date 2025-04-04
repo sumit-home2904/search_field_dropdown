@@ -337,15 +337,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         itemListKey.currentContext?.findRenderObject() as RenderBox?;
 
     RenderBox? addButtonRender =
-    addButtonKey.currentContext?.findRenderObject() as RenderBox?;
+        addButtonKey.currentContext?.findRenderObject() as RenderBox?;
 
     if (renderBox == null) return;
 
     final double itemHeight = renderBox.size.height;
-    final double addButtonHeight = addButtonRender?.size.height??0;
+    final double addButtonHeight = addButtonRender?.size.height ?? 0;
 
-    final int maxVisibleItems = (((widget.overlayHeight ?? 150)-addButtonHeight) / itemHeight)
-        .floor(); // How many items fit in the view
+    final int maxVisibleItems =
+        (((widget.overlayHeight ?? 150) - addButtonHeight) / itemHeight)
+            .floor(); // How many items fit in the view
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
 
