@@ -283,6 +283,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             );
             items = await widget.onTap!();
           }
+        }else{
+          textController.text =
+              selectedItemConvertor(listData: widget.initialItem) ?? "";
         }
       });
     }
@@ -385,7 +388,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     textController.text =
         selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
     widget.onChanged(items[index]);
-    focusedIndex = 0;
+    focusedIndex = -1;
     setState(() {});
   }
 
@@ -394,6 +397,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     return CallbackShortcuts(
       bindings: {
         LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
+          // dropDownOpen();
           setState(() {
             isKeyboardNavigation = true;
             if (focusedIndex > 0) {
@@ -406,6 +410,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           });
         },
         LogicalKeySet(LogicalKeyboardKey.arrowDown): () {
+          dropDownOpen();
           setState(() {
             isKeyboardNavigation = true;
 
@@ -419,7 +424,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
               scrollController.jumpTo(
                 focusedIndex * renderBox!.size.height, // Adjust height per item
               );
-              // scrollToFocusedItem();
             }
           });
         },
@@ -556,6 +560,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// drop-down search or text form filed on change function
   onChange(value) async {
+    dropDownOpen();
     RenderBox? renderBox =
         itemListKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox != null) {
@@ -576,5 +581,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   /// when on search is not null then call this function
   onSearchCalled(value) async {
     if (widget.onSearch != null) items = await widget.onSearch!(value);
+  }
+
+  ///open drop down when any event trigger.
+  dropDownOpen() {
+    if(!widget.controller.isShowing){
+      focusedIndex = 0;
+      widget.controller.show();
+    }
+    items=widget.item;
   }
 }
