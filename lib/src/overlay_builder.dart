@@ -254,7 +254,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
               if (widget.addButton != null)
                 SizedBox(
                     key: widget.addButtonKey,
-                    child: widget.addButton ?? SizedBox(key: widget.addButtonKey)),
+                    child:
+                        widget.addButton ?? SizedBox(key: widget.addButtonKey)),
             const SizedBox(height: 2),
             Expanded(
                 child: Listener(
@@ -366,7 +367,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             if (widget.addButton != null)
               SizedBox(
                   key: widget.addButtonKey,
-                  child: widget.addButton ?? SizedBox(key: widget.addButtonKey)),
+                  child:
+                      widget.addButton ?? SizedBox(key: widget.addButtonKey)),
           Spacer(),
           widget.errorMessage ?? const Text("No options"),
           Spacer(),
