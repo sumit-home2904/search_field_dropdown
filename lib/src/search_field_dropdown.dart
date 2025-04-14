@@ -443,15 +443,11 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             onTap: () {
               if (selectedItem == null) {
                 textController.clear();
-                if (widget.onSearch != null) {
-                  widget.onSearch!("");
-                }
+
               } else {
                 textController.text =
                     selectedItemConvertor(listData: widget.initialItem) ?? "";
-                if (widget.onSearch != null) {
-                  widget.onSearch!("");
-                }
+
               }
               setState(() {});
               widget.controller.hide();
