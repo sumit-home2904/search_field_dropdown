@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:search_field_dropdown/search_field_dropdown.dart';
-
-import 'Model/CityModel.dart';
-import 'Model/StatesModel.dart';
-import 'Model/CountryModel.dart';
+import 'Model/city_model.dart';
+import 'Model/states_model.dart';
+import 'Model/country_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -145,24 +144,13 @@ class _DropDownClassState extends State<DropDownClass> {
                     controller: countryController,
                     initialItem: selectedCountry,
                     item: countryList,
-                    canShowButton: true,
-                    addButton: Container(
-                      height: 30,
-                      color: Colors.yellowAccent,
-                    ),
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),
                     menuDecoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.blueAccent),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.blue.shade100,
-                              blurRadius: 4,
-                              spreadRadius: 5,
-                              offset: const Offset(0, 0))
-                        ]),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.blueAccent),
+                    ),
                     filedDecoration: InputDecoration(
                       suffixIcon: IntrinsicWidth(
                         child: Row(
@@ -197,20 +185,7 @@ class _DropDownClassState extends State<DropDownClass> {
                         ),
                       ),
                     ),
-                    onChanged: (CountryModel? value) {
-                      setState(() {
-                        isHidde = true;
-                        selectedCountry = value;
-                        selectedCity = null;
-                        selectedState = null;
-                        tempStatesList = [];
-                        tempCityList = [];
-                        tempStatesList = statesList.where((element) {
-                          return "${element.countryId}" ==
-                              "${selectedCountry?.id}";
-                        }).toList();
-                      });
-                    },
+                    onChanged: (CountryModel? value) {},
                     onSearch: (value) async {
                       return countryList.where((element) {
                         return element.name
@@ -257,10 +232,10 @@ class _DropDownClassState extends State<DropDownClass> {
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),
                     menuDecoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.blueAccent),
-                        boxShadow: []),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.blueAccent),
+                    ),
                     filedDecoration: InputDecoration(
                       suffixIcon: IntrinsicWidth(
                         child: Row(
@@ -270,8 +245,9 @@ class _DropDownClassState extends State<DropDownClass> {
                                 onTap: () {
                                   setState(() {
                                     selectedState = null;
-                                    if (selectedCountry == null)
+                                    if (selectedCountry == null) {
                                       tempStatesList.clear();
+                                    }
                                   });
                                 },
                                 child: const Icon(
@@ -360,8 +336,9 @@ class _DropDownClassState extends State<DropDownClass> {
                                 onTap: () {
                                   setState(() {
                                     selectedCity = null;
-                                    if (selectedState == null)
+                                    if (selectedState == null) {
                                       tempCityList.clear();
+                                    }
                                   });
                                 },
                                 child: const Icon(

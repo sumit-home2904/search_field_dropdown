@@ -1,3 +1,6 @@
+# 1.0.4
+ui component added or shortcut issue fixed  
+
 # 1.0.3
 Shortcut added for item selection on Mac, Windows, and web; mouse hover feature implemented.
 

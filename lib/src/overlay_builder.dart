@@ -35,6 +35,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Function(int) changeIndex;
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
+  final double? elevation;
 
   const OverlayBuilder({
     super.key,
@@ -69,6 +70,7 @@ class OverlayBuilder<T> extends StatefulWidget {
     required this.textController,
     required this.listItemBuilder,
     this.selectedItemBuilder,
+    this.elevation = 0,
   });
 
   @override
@@ -212,24 +214,32 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         followerAnchor:
             displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
         child: LayoutBuilder(builder: (context, c) {
-          return Container(
-            key: key1,
+          return SizedBox(
             height: calculateHeight() + 4,
             width: widget.renderBox?.size.width ?? c.maxWidth,
-            decoration: menuDecoration(),
-            child: AnimatedSection(
-              expand: true,
-              animationDismissed: widget.controller.hide,
-              axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+            child: Card(
+              elevation: widget.elevation,
+              color: Colors.blue,
+              margin: EdgeInsets.zero,
               child: Container(
-                  key: key2,
-                  height: calculateHeight() + 4,
-                  width: MediaQuery.sizeOf(context).width,
-                  child: widget.isApiLoading
-                      ? loaderWidget()
-                      : (widget.item).isEmpty
-                          ? emptyErrorWidget()
-                          : uiListWidget()),
+                key: key1,
+                height: calculateHeight() + 4,
+                decoration: menuDecoration(),
+                child: AnimatedSection(
+                  expand: true,
+                  animationDismissed: widget.controller.hide,
+                  axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+                  child: Container(
+                      key: key2,
+                      height: calculateHeight() + 4,
+                      width: MediaQuery.sizeOf(context).width,
+                      child: widget.isApiLoading
+                          ? loaderWidget()
+                          : (widget.item).isEmpty
+                              ? emptyErrorWidget()
+                              : uiListWidget()),
+                ),
+              ),
             ),
           );
         }));

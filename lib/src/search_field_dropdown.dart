@@ -197,45 +197,47 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// to [initialItem] or the empty string.
   ///
 
-  const SearchFieldDropdown({
-    super.key,
-    this.onTap,
-    this.onSearch,
-    this.focusNode,
-    this.addButton,
-    this.validator,
-    this.showCursor,
-    this.menuMargin,
-    this.listPadding,
-    this.cursorColor,
-    this.initialItem,
-    this.cursorWidth,
-    this.keyboardType,
-    this.cursorRadius,
-    this.cursorHeight,
-    this.loaderWidget,
-    this.errorMessage,
-    required this.item,
-    this.overlayHeight,
-    this.menuDecoration,
-    this.dropdownOffset,
-    this.inputFormatters,
-    this.cursorErrorColor,
-    this.readOnly = false,
-    this.errorWidgetHeight,
-    this.autovalidateMode,
-    required this.textStyle,
-    required this.onChanged,
-    required this.controller,
-    this.selectedItemBuilder,
-    this.isApiLoading = false,
-    this.fieldReadOnly = false,
-    this.canShowButton = false,
-    required this.listItemBuilder,
-    required this.filedDecoration,
-    this.enableInteractiveSelection,
-    this.textAlign = TextAlign.start,
-  });
+  final double? elevation;
+
+  const SearchFieldDropdown(
+      {super.key,
+      this.onTap,
+      this.onSearch,
+      this.focusNode,
+      this.addButton,
+      this.validator,
+      this.showCursor,
+      this.menuMargin,
+      this.listPadding,
+      this.cursorColor,
+      this.initialItem,
+      this.cursorWidth,
+      this.keyboardType,
+      this.cursorRadius,
+      this.cursorHeight,
+      this.loaderWidget,
+      this.errorMessage,
+      required this.item,
+      this.overlayHeight,
+      this.menuDecoration,
+      this.dropdownOffset,
+      this.inputFormatters,
+      this.cursorErrorColor,
+      this.readOnly = false,
+      this.errorWidgetHeight,
+      this.autovalidateMode,
+      required this.textStyle,
+      required this.onChanged,
+      required this.controller,
+      this.selectedItemBuilder,
+      this.isApiLoading = false,
+      this.fieldReadOnly = false,
+      this.canShowButton = false,
+      required this.listItemBuilder,
+      required this.filedDecoration,
+      this.enableInteractiveSelection,
+      this.textAlign = TextAlign.start,
+      this.elevation = 0});
 
   @override
   State<SearchFieldDropdown<T>> createState() => SearchFieldDropdownState<T>();
@@ -245,7 +247,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   T? selectedItem;
   late List<T> items;
 
-  int focusedIndex = 0;
+  int focusedIndex = -1;
 
   bool isTypingDisabled = false;
   bool isKeyboardNavigation = false;
@@ -283,7 +285,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             );
             items = await widget.onTap!();
           }
-        }else{
+          if (widget.controller.isShowing) {
+            focusedIndex = 0;
+          } else {
+            focusedIndex = -1;
+          }
+        } else {
           textController.text =
               selectedItemConvertor(listData: widget.initialItem) ?? "";
         }
@@ -389,6 +396,11 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     textController.text =
         selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
     widget.onChanged(items[index]);
+    if (widget.initialItem == null) {
+      textController.clear();
+      selectedItem = null;
+      setState(() {});
+    }
     focusedIndex = -1;
     setState(() {});
   }
@@ -443,11 +455,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             onTap: () {
               if (selectedItem == null) {
                 textController.clear();
-
               } else {
                 textController.text =
                     selectedItemConvertor(listData: widget.initialItem) ?? "";
-
               }
               setState(() {});
               widget.controller.hide();
@@ -467,6 +477,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     itemListKey: itemListKey,
                     addButtonKey: addButtonKey,
                     onChanged: widget.onChanged,
+                    elevation: widget.elevation,
                     changeIndex: changeFocusIndex,
                     onItemSelected: onItemSelected,
                     textStyle: widget.textStyle,
@@ -582,10 +593,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   ///open drop down when any event trigger.
   dropDownOpen() {
-    if(!widget.controller.isShowing){
+    if (!widget.controller.isShowing) {
       focusedIndex = 0;
       widget.controller.show();
     }
-    items=widget.item;
+    if (textController.text.isEmpty) {
+      items = widget.item;
+    }
   }
 }
