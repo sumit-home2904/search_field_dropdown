@@ -313,6 +313,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     return null;
   }
 
+  bool isApiLoading = false;
+
   @override
   void didUpdateWidget(covariant SearchFieldDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -321,6 +323,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         widget.onSearch != oldWidget.onSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         items = widget.item;
+        setState(() {});
+      });
+    }
+
+    if(widget.isApiLoading != oldWidget.isApiLoading){
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        isApiLoading =  widget.isApiLoading;
         setState(() {});
       });
     }
@@ -391,18 +400,23 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// This method is called when the user selects a drop-down value item from the list
   onItemSelected(index) {
+
     widget.controller.hide();
-    selectedItem = items[index];
-    textController.text =
-        selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
-    widget.onChanged(items[index]);
-    if (widget.initialItem == null) {
-      textController.clear();
-      selectedItem = null;
+    if(items.isNotEmpty) {
+      selectedItem = items[index];
+      textController.text =
+          selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
+      widget.onChanged(items[index]);
+
+      ///If the onChange method in the dropdown does not set the initial item, none of the items will be selected.
+      if (widget.initialItem == null) {
+        textController.clear();
+        selectedItem = null;
+        setState(() {});
+      }
+      focusedIndex = -1;
       setState(() {});
     }
-    focusedIndex = -1;
-    setState(() {});
   }
 
   @override
@@ -440,108 +454,122 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             }
           });
         },
-        LogicalKeySet(LogicalKeyboardKey.enter): () {
-          if (focusedIndex >= 0) {
-            onItemSelected(focusedIndex);
-          }
-        },
       },
-      child: OverlayPortal(
-        controller: widget.controller,
-        overlayChildBuilder: (context) {
-          final RenderBox? renderBox =
-              textFieldKey.currentContext?.findRenderObject() as RenderBox?;
-          return GestureDetector(
-            onTap: () {
-              if (selectedItem == null) {
-                textController.clear();
-              } else {
-                textController.text =
-                    selectedItemConvertor(listData: widget.initialItem) ?? "";
+      child: Focus(
+        onKeyEvent: (FocusNode node, KeyEvent event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.enter) {
+              /// When Drop-down open then call this method and select item value.
+              if(widget.controller.isShowing){
+                if (focusedIndex >= 0) {
+                  onItemSelected(focusedIndex);
+                  return KeyEventResult.handled;
+                }
+              }else{
+                return KeyEventResult.ignored;
               }
-              setState(() {});
-              widget.controller.hide();
-            },
-            child: Container(
-              color: Colors.transparent,
-              child: Stack(
-                children: [
-                  OverlayBuilder(
-                    item: items,
-                    layerLink: layerLink,
-                    renderBox: renderBox,
-                    changeKeyBool: changeKeyBool,
-                    scrollController: scrollController,
-                    focusedIndex: focusedIndex,
-                    isKeyboardNavigation: isKeyboardNavigation,
-                    itemListKey: itemListKey,
-                    addButtonKey: addButtonKey,
-                    onChanged: widget.onChanged,
-                    elevation: widget.elevation,
-                    changeIndex: changeFocusIndex,
-                    onItemSelected: onItemSelected,
-                    textStyle: widget.textStyle,
-                    addButton: widget.addButton,
-                    controller: widget.controller,
-                    textController: textController,
-                    initialItem: widget.initialItem,
-                    listPadding: widget.listPadding,
-                    isApiLoading: widget.isApiLoading,
-                    loaderWidget: widget.loaderWidget,
-                    errorMessage: widget.errorMessage,
-                    cursorRadius: widget.cursorRadius,
-                    fieldReadOnly: widget.fieldReadOnly,
-                    overlayHeight: widget.overlayHeight,
-                    canShowButton: widget.canShowButton,
-                    menuDecoration: widget.menuDecoration,
-                    dropdownOffset: widget.dropdownOffset,
-                    listItemBuilder: widget.listItemBuilder,
-                    cursorErrorColor: widget.cursorErrorColor,
-                    errorWidgetHeight: widget.errorWidgetHeight,
-                    selectedItemBuilder: widget.selectedItemBuilder,
-                  )
-                ],
-              ),
-            ),
-          );
+            }
+          }
+          return KeyEventResult.ignored; // Default behavior for other keys
         },
-        child: CompositedTransformTarget(
-          link: layerLink,
-          child: Listener(
-            onPointerDown: (PointerDownEvent event) {
-              if (event.buttons == kSecondaryMouseButton) {
-                // Disable typing on secondary mouse button press
-                setState(() {
-                  isTypingDisabled = true;
-                });
-              } else {
-                setState(() {
-                  isTypingDisabled = false;
-                });
-              }
-            },
-            child: TextFormField(
-              key: textFieldKey,
-              enableInteractiveSelection:
-                  widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
-              style: widget.textStyle,
-              keyboardType: widget.keyboardType,
-              inputFormatters: widget.inputFormatters,
-              textAlign: widget.textAlign,
-              readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
-              focusNode: widget.focusNode,
-              controller: textController,
-              showCursor: widget.showCursor,
-              cursorHeight: widget.cursorHeight,
-              cursorWidth: widget.cursorWidth ?? 2.0,
-              cursorRadius: widget.cursorRadius,
-              decoration: widget.filedDecoration,
-              cursorColor: widget.cursorColor ?? Colors.black,
-              cursorErrorColor: widget.cursorErrorColor ?? Colors.black,
-              autovalidateMode: widget.autovalidateMode,
-              validator: widget.validator,
-              onChanged: onChange,
-              onTap: textFiledOnTap,
+
+        child: OverlayPortal(
+          controller: widget.controller,
+          overlayChildBuilder: (context) {
+            final RenderBox? renderBox =
+                textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+            return GestureDetector(
+              onTap: () {
+                if (selectedItem == null) {
+                  textController.clear();
+                } else {
+                  textController.text =
+                      selectedItemConvertor(listData: widget.initialItem) ?? "";
+                }
+                setState(() {});
+                widget.controller.hide();
+              },
+              child: Container(
+                color: Colors.transparent,
+                child: Stack(
+                  children: [
+                    OverlayBuilder(
+                      item: items,
+                      layerLink: layerLink,
+                      renderBox: renderBox,
+                      changeKeyBool: changeKeyBool,
+                      scrollController: scrollController,
+                      focusedIndex: focusedIndex,
+                      isKeyboardNavigation: isKeyboardNavigation,
+                      itemListKey: itemListKey,
+                      addButtonKey: addButtonKey,
+                      onChanged: widget.onChanged,
+                      elevation: widget.elevation,
+                      changeIndex: changeFocusIndex,
+                      onItemSelected: onItemSelected,
+                      textStyle: widget.textStyle,
+                      addButton: widget.addButton,
+                      controller: widget.controller,
+                      textController: textController,
+                      initialItem: widget.initialItem,
+                      listPadding: widget.listPadding,
+                      isApiLoading: isApiLoading,
+                      loaderWidget: widget.loaderWidget,
+                      errorMessage: widget.errorMessage,
+                      cursorRadius: widget.cursorRadius,
+                      fieldReadOnly: widget.fieldReadOnly,
+                      overlayHeight: widget.overlayHeight,
+                      canShowButton: widget.canShowButton,
+                      menuDecoration: widget.menuDecoration,
+                      dropdownOffset: widget.dropdownOffset,
+                      listItemBuilder: widget.listItemBuilder,
+                      cursorErrorColor: widget.cursorErrorColor,
+                      errorWidgetHeight: widget.errorWidgetHeight,
+                      selectedItemBuilder: widget.selectedItemBuilder,
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+          child: CompositedTransformTarget(
+            link: layerLink,
+            child: Listener(
+              onPointerDown: (PointerDownEvent event) {
+                if (event.buttons == kSecondaryMouseButton) {
+                  // Disable typing on secondary mouse button press
+                  setState(() {
+                    isTypingDisabled = true;
+                  });
+                } else {
+                  setState(() {
+                    isTypingDisabled = false;
+                  });
+                }
+              },
+              child: TextFormField(
+                key: textFieldKey,
+                enableInteractiveSelection:
+                    widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
+                style: widget.textStyle,
+                keyboardType: widget.keyboardType,
+                inputFormatters: widget.inputFormatters,
+                textAlign: widget.textAlign,
+                readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
+                focusNode: widget.focusNode,
+                controller: textController,
+                showCursor: widget.showCursor,
+                cursorHeight: widget.cursorHeight,
+                cursorWidth: widget.cursorWidth ?? 2.0,
+                cursorRadius: widget.cursorRadius,
+                decoration: widget.filedDecoration,
+                cursorColor: widget.cursorColor ?? Colors.black,
+                cursorErrorColor: widget.cursorErrorColor ?? Colors.black,
+                autovalidateMode: widget.autovalidateMode,
+                validator: widget.validator,
+                onChanged: onChange,
+                onTap: textFiledOnTap,
+              ),
             ),
           ),
         ),
