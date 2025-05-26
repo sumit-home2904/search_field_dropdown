@@ -327,9 +327,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       });
     }
 
-    if(widget.isApiLoading != oldWidget.isApiLoading){
+    if (widget.isApiLoading != oldWidget.isApiLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        isApiLoading =  widget.isApiLoading;
+        isApiLoading = widget.isApiLoading;
         setState(() {});
       });
     }
@@ -400,9 +400,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// This method is called when the user selects a drop-down value item from the list
   onItemSelected(index) {
-
     widget.controller.hide();
-    if(items.isNotEmpty) {
+    if (items.isNotEmpty) {
       selectedItem = items[index];
       textController.text =
           selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
@@ -460,19 +459,18 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.enter) {
               /// When Drop-down open then call this method and select item value.
-              if(widget.controller.isShowing){
+              if (widget.controller.isShowing) {
                 if (focusedIndex >= 0) {
                   onItemSelected(focusedIndex);
                   return KeyEventResult.handled;
                 }
-              }else{
+              } else {
                 return KeyEventResult.ignored;
               }
             }
           }
           return KeyEventResult.ignored; // Default behavior for other keys
         },
-
         child: OverlayPortal(
           controller: widget.controller,
           overlayChildBuilder: (context) {
@@ -549,8 +547,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
               },
               child: TextFormField(
                 key: textFieldKey,
-                enableInteractiveSelection:
-                    widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
+                enableInteractiveSelection: widget.enableInteractiveSelection ??
+                    (!widget.fieldReadOnly),
                 style: widget.textStyle,
                 keyboardType: widget.keyboardType,
                 inputFormatters: widget.inputFormatters,
