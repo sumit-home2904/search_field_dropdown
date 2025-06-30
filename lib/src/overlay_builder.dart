@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
@@ -173,8 +174,19 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         final screenHeight = MediaQuery.of(context).size.height;
         double y = render1.localToGlobal(Offset.zero).dy;
 
-        if (screenHeight - y < render2.size.height) {
-          displayOverlayBottom = false;
+        if(Platform.isAndroid ||Platform.isIOS){
+          print("screenHeight $screenHeight");
+          print("y $y");
+          // print("MediaQuery.of(context).viewInsets.bottom ${keyBoardHeight}");
+          print("render2.size.height ${render2.size.height}");
+          print("calculation ${screenHeight - y -MediaQuery.of(context).viewInsets.bottom}");
+          if (screenHeight - y -(MediaQuery.of(context).size.height*0.4)< render2.size.height) {
+            displayOverlayBottom = false;
+          }
+        }else {
+          if (screenHeight - y < render2.size.height) {
+            displayOverlayBottom = false;
+          }
         }
 
         setState(() {}); // Update the state after calculation.
@@ -352,6 +364,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   }
 
   Offset setOffset() {
+    print(Offset(widget.dropdownOffset?.dx ?? 0,
+        displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10));
     return Offset(widget.dropdownOffset?.dx ?? 0,
         displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10);
   }

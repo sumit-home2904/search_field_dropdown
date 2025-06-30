@@ -170,8 +170,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// call for [listPadding] to provide padding for the list view
   final EdgeInsets? listPadding;
 
-  /// call for [menuMargin] to provide Margin for the list view item container
-  final EdgeInsets? menuMargin;
 
   /// When the value of [canShowButton] is true, the add button becomes visible.
   final bool canShowButton;
@@ -207,7 +205,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
       this.addButton,
       this.validator,
       this.showCursor,
-      this.menuMargin,
       this.listPadding,
       this.cursorColor,
       this.initialItem,
@@ -329,9 +326,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       if (widget.initialItem != oldWidget.initialItem) {
         if (widget.initialItem == null) {
           selectedItem = null;
-          widget.onChanged(null);
+          // widget.onChanged(null);
           textController.clear();
-          if (widget.onSearch != null) widget.onSearch!("");
+          // if (widget.onSearch != null) widget.onSearch!("");
         } else {
           selectedItem = widget.initialItem;
           textController.text =
@@ -391,6 +388,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// This method is called when the user selects a drop-down value item from the list
   onItemSelected(index) {
+    print("onItemSelected $index");
     widget.controller.hide();
     selectedItem = items[index];
     textController.text =
@@ -404,144 +402,166 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     focusedIndex = -1;
     setState(() {});
   }
+  final GlobalKey contentKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
-    return CallbackShortcuts(
-      bindings: {
-        LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
-          // dropDownOpen();
-          setState(() {
-            isKeyboardNavigation = true;
-            if (focusedIndex > 0) {
-              focusedIndex--;
-              scrollToFocusedItem();
-            } else {
-              focusedIndex = (items.length - 1);
-              scrollToFocusedItem();
-            }
-          });
-        },
-        LogicalKeySet(LogicalKeyboardKey.arrowDown): () {
-          dropDownOpen();
-          setState(() {
-            isKeyboardNavigation = true;
+    return PopScope(
+      // canPop: !widget.controller.isShowing, // Only allow pop when dropdown is hidden
 
-            if (focusedIndex < items.length - 1) {
-              focusedIndex++;
-              scrollToFocusedItem();
-            } else {
-              focusedIndex = 0;
-              RenderBox? renderBox =
-                  itemListKey.currentContext?.findRenderObject() as RenderBox?;
-              scrollController.jumpTo(
-                focusedIndex * renderBox!.size.height, // Adjust height per item
-              );
-            }
-          });
-        },
-        LogicalKeySet(LogicalKeyboardKey.enter): () {
-          if (focusedIndex >= 0) {
-            onItemSelected(focusedIndex);
-          }
-        },
+      onPopInvokedWithResult:(didPop, result) {
+        if (widget.controller.isShowing) {
+          widget.controller.hide();
+        }
       },
-      child: OverlayPortal(
-        controller: widget.controller,
-        overlayChildBuilder: (context) {
-          final RenderBox? renderBox =
-              textFieldKey.currentContext?.findRenderObject() as RenderBox?;
-          return GestureDetector(
-            onTap: () {
-              if (selectedItem == null) {
-                textController.clear();
+      child: CallbackShortcuts(
+        bindings: {
+          LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
+            // dropDownOpen();
+            setState(() {
+              isKeyboardNavigation = true;
+              if (focusedIndex > 0) {
+                focusedIndex--;
+                scrollToFocusedItem();
               } else {
-                textController.text =
-                    selectedItemConvertor(listData: widget.initialItem) ?? "";
+                focusedIndex = (items.length - 1);
+                scrollToFocusedItem();
               }
-              setState(() {});
-              widget.controller.hide();
-            },
-            child: Container(
-              color: Colors.transparent,
-              child: Stack(
-                children: [
-                  OverlayBuilder(
-                    item: items,
-                    layerLink: layerLink,
-                    renderBox: renderBox,
-                    changeKeyBool: changeKeyBool,
-                    scrollController: scrollController,
-                    focusedIndex: focusedIndex,
-                    isKeyboardNavigation: isKeyboardNavigation,
-                    itemListKey: itemListKey,
-                    addButtonKey: addButtonKey,
-                    onChanged: widget.onChanged,
-                    elevation: widget.elevation,
-                    changeIndex: changeFocusIndex,
-                    onItemSelected: onItemSelected,
-                    textStyle: widget.textStyle,
-                    addButton: widget.addButton,
-                    controller: widget.controller,
-                    textController: textController,
-                    initialItem: widget.initialItem,
-                    listPadding: widget.listPadding,
-                    isApiLoading: widget.isApiLoading,
-                    loaderWidget: widget.loaderWidget,
-                    errorMessage: widget.errorMessage,
-                    cursorRadius: widget.cursorRadius,
-                    fieldReadOnly: widget.fieldReadOnly,
-                    overlayHeight: widget.overlayHeight,
-                    canShowButton: widget.canShowButton,
-                    menuDecoration: widget.menuDecoration,
-                    dropdownOffset: widget.dropdownOffset,
-                    listItemBuilder: widget.listItemBuilder,
-                    cursorErrorColor: widget.cursorErrorColor,
-                    errorWidgetHeight: widget.errorWidgetHeight,
-                    selectedItemBuilder: widget.selectedItemBuilder,
-                  )
-                ],
-              ),
-            ),
-          );
+            });
+          },
+          LogicalKeySet(LogicalKeyboardKey.arrowDown): () {
+            dropDownOpen();
+            setState(() {
+              isKeyboardNavigation = true;
+
+              if (focusedIndex < items.length - 1) {
+                focusedIndex++;
+                scrollToFocusedItem();
+              } else {
+                focusedIndex = 0;
+                RenderBox? renderBox =
+                    itemListKey.currentContext?.findRenderObject() as RenderBox?;
+                scrollController.jumpTo(
+                  focusedIndex * renderBox!.size.height, // Adjust height per item
+                );
+              }
+            });
+          },
+          LogicalKeySet(LogicalKeyboardKey.enter): () {
+            if (focusedIndex >= 0) {
+              onItemSelected(focusedIndex);
+            }
+          },
         },
-        child: CompositedTransformTarget(
-          link: layerLink,
-          child: Listener(
-            onPointerDown: (PointerDownEvent event) {
-              if (event.buttons == kSecondaryMouseButton) {
-                // Disable typing on secondary mouse button press
-                setState(() {
-                  isTypingDisabled = true;
-                });
-              } else {
-                setState(() {
-                  isTypingDisabled = false;
-                });
-              }
-            },
-            child: TextFormField(
-              key: textFieldKey,
-              enableInteractiveSelection:
-                  widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
-              style: widget.textStyle,
-              keyboardType: widget.keyboardType,
-              inputFormatters: widget.inputFormatters,
-              textAlign: widget.textAlign,
-              readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
-              focusNode: widget.focusNode,
-              controller: textController,
-              showCursor: widget.showCursor,
-              cursorHeight: widget.cursorHeight,
-              cursorWidth: widget.cursorWidth ?? 2.0,
-              cursorRadius: widget.cursorRadius,
-              decoration: widget.filedDecoration,
-              cursorColor: widget.cursorColor ?? Colors.black,
-              cursorErrorColor: widget.cursorErrorColor ?? Colors.black,
-              autovalidateMode: widget.autovalidateMode,
-              validator: widget.validator,
-              onChanged: onChange,
-              onTap: textFiledOnTap,
+        child: OverlayPortal(
+          controller: widget.controller,
+          overlayChildBuilder: (context) {
+            final RenderBox? renderBox =
+                textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+            return GestureDetector(
+              // behavior: HitTestBehavior.translucent,
+              // onTapDown: (details) {
+              //   // Check if tap is outside the dropdown content
+              //   final RenderBox contentBox = contentKey.currentContext!.findRenderObject() as RenderBox;
+              //   final Offset localPosition = contentBox.globalToLocal(details.globalPosition);
+              //
+              //   if (!contentBox.size.contains(localPosition)) {
+              //     widget.controller.hide();
+              //   }
+              // },
+
+              onTap: () {
+                if (selectedItem == null) {
+                  textController.clear();
+                } else {
+                  textController.text =
+                      selectedItemConvertor(listData: widget.initialItem) ?? "";
+                }
+                setState(() {});
+                widget.controller.hide();
+              },
+              child: Container(
+                color: Colors.transparent,
+                child: Stack(
+                  children: [
+                    OverlayBuilder(
+                      key: contentKey,
+                      item: items,
+                      layerLink: layerLink,
+                      renderBox: renderBox,
+                      changeKeyBool: changeKeyBool,
+                      scrollController: scrollController,
+                      focusedIndex: focusedIndex,
+                      isKeyboardNavigation: isKeyboardNavigation,
+                      itemListKey: itemListKey,
+                      addButtonKey: addButtonKey,
+                      onChanged: widget.onChanged,
+                      elevation: widget.elevation,
+                      changeIndex: changeFocusIndex,
+                      onItemSelected: onItemSelected,
+                      textStyle: widget.textStyle,
+                      addButton: widget.addButton,
+                      controller: widget.controller,
+                      textController: textController,
+                      initialItem: widget.initialItem,
+                      listPadding: widget.listPadding,
+                      isApiLoading: widget.isApiLoading,
+                      loaderWidget: widget.loaderWidget,
+                      errorMessage: widget.errorMessage,
+                      cursorRadius: widget.cursorRadius,
+                      fieldReadOnly: widget.fieldReadOnly,
+                      overlayHeight: widget.overlayHeight,
+                      canShowButton: widget.canShowButton,
+                      menuDecoration: widget.menuDecoration,
+                      dropdownOffset: widget.dropdownOffset,
+                      listItemBuilder: widget.listItemBuilder,
+                      cursorErrorColor: widget.cursorErrorColor,
+                      errorWidgetHeight: widget.errorWidgetHeight,
+                      selectedItemBuilder: widget.selectedItemBuilder,
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+          child: CompositedTransformTarget(
+            link: layerLink,
+            child: Listener(
+              onPointerDown: (PointerDownEvent event) {
+                if (event.buttons == kSecondaryMouseButton) {
+                  // Disable typing on secondary mouse button press
+                  setState(() {
+                    isTypingDisabled = true;
+                  });
+                } else {
+                  setState(() {
+                    isTypingDisabled = false;
+                  });
+                }
+              },
+              child: TextFormField(
+                key: textFieldKey,
+                enableInteractiveSelection:
+                    widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
+                style: widget.textStyle,
+                keyboardType: widget.keyboardType,
+                inputFormatters: widget.inputFormatters,
+                textAlign: widget.textAlign,
+                readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
+                focusNode: widget.focusNode,
+                controller: textController,
+                showCursor: widget.showCursor,
+                cursorHeight: widget.cursorHeight,
+                cursorWidth: widget.cursorWidth ?? 2.0,
+                cursorRadius: widget.cursorRadius,
+                decoration: widget.filedDecoration,
+                cursorColor: widget.cursorColor ?? Colors.black,
+                cursorErrorColor: widget.cursorErrorColor ?? Colors.black,
+                autovalidateMode: widget.autovalidateMode,
+                validator: widget.validator,
+                onChanged: onChange,
+                onTap: textFiledOnTap,
+              ),
             ),
           ),
         ),
@@ -578,6 +598,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       );
     }
 
+    //todo: remove this comment brackets when issue found!
     if (value.isEmpty) {
       onSearchCalled("");
     } else {

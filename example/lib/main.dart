@@ -42,6 +42,7 @@ class DropDownClass extends StatefulWidget {
 
 class _DropDownClassState extends State<DropDownClass> {
   final countryController = OverlayPortalController();
+  List<OverlayPortalController> countryController1=[];
   final stateController = OverlayPortalController();
   final cityController = OverlayPortalController();
   final itemController = OverlayPortalController();
@@ -98,7 +99,12 @@ class _DropDownClassState extends State<DropDownClass> {
     loadCity();
     loadState();
     loadCountry();
+
+    countryController1=List.generate(15,(index) =>  OverlayPortalController());
   }
+  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey1 = GlobalKey<SearchFieldDropdownState<String>>();
+  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey2 = GlobalKey<SearchFieldDropdownState<String>>();
+  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey3 = GlobalKey<SearchFieldDropdownState<String>>();
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +191,12 @@ class _DropDownClassState extends State<DropDownClass> {
                         ),
                       ),
                     ),
-                    onChanged: (CountryModel? value) {},
+                    onChanged: (CountryModel? value) {
+                      selectedCountry=value;
+                      setState(() {
+
+                      });
+                    },
                     onSearch: (value) async {
                       return countryList.where((element) {
                         return element.name
@@ -398,6 +409,122 @@ class _DropDownClassState extends State<DropDownClass> {
                   ))
                 ],
               ),
+
+              // Expanded(
+              //   child: ListView.builder(
+              //     shrinkWrap: true,
+              //     itemCount: 10,
+              //     itemBuilder: (context, index) {
+              //     return InkWell(
+              //       onTap: () {
+              //         Navigator.push(context, MaterialPageRoute(builder: (context) =>DropDownClass() ,));
+              //       },
+              //       child: Container(
+              //         height: 50,
+              //         margin: EdgeInsets.symmetric(vertical: 10),
+              //         child: Text("hello"),
+              //       )
+              //     );
+              //   },),
+              // ),
+
+
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: 15,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) =>DropDownClass() ,));
+                      },
+                      child: SearchFieldDropdown<CountryModel>(
+                        // focusNode: focusNode,
+                        enableInteractiveSelection: true,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        controller: countryController1[index],
+                        initialItem: selectedCountry,
+                        item: countryList,
+                        textStyle: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400),
+                        menuDecoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.blueAccent),
+                        ),
+                        filedDecoration: InputDecoration(
+                          suffixIcon: IntrinsicWidth(
+                            child: Row(
+                              children: [
+                                if (selectedCountry != null)
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        isHidde = false;
+                                        tempCityList = [];
+                                        tempStatesList = [];
+                                        // print(tempStatesList.length);
+                                        selectedCity = null;
+                                        selectedState = null;
+                                        selectedCountry = null;
+                                        loadCountry();
+                                      });
+                                    },
+                                    child: const Icon(
+                                      Icons.clear,
+                                      size: 20,
+                                    ),
+                                  ),
+                                if (selectedCountry != null)
+                                  const SizedBox(width: 5),
+                                const Icon(
+                                  Icons.arrow_drop_down_sharp,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ),
+                          ),
+                        ),
+                        onChanged: (CountryModel? value) {},
+                        onSearch: (value) async {
+                          return countryList.where((element) {
+                            return element.name
+                                .toLowerCase()
+                                .contains(value.toLowerCase());
+                          }).toList();
+                        },
+                        listItemBuilder: (context, item, isSelected) {
+                          int index = countryList.indexOf(item);
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 5),
+                            margin:
+                            EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
+                            decoration: BoxDecoration(
+                                color:
+                                isSelected ? Colors.green : Colors.transparent,
+                                borderRadius: BorderRadius.circular(2)),
+                            child: Text(
+                              item.name,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected ? Colors.white : Colors.black,
+                                  fontWeight: FontWeight.w400),
+                            ),
+                          );
+                        },
+                        selectedItemBuilder: (context, item) {
+                          return Text(
+                            item.name,
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w400),
+                          );
+                        },
+                      ),
+                    );
+                  },),
+              )
             ],
           ),
         ),
