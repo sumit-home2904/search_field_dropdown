@@ -310,6 +310,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     return null;
   }
 
+  bool isApiLoading = false;
+
   @override
   void didUpdateWidget(covariant SearchFieldDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -318,6 +320,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         widget.onSearch != oldWidget.onSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         items = widget.item;
+        setState(() {});
+      });
+    }
+
+    if (widget.isApiLoading != oldWidget.isApiLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        isApiLoading = widget.isApiLoading;
         setState(() {});
       });
     }
@@ -388,19 +397,22 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// This method is called when the user selects a drop-down value item from the list
   onItemSelected(index) {
-    print("onItemSelected $index");
     widget.controller.hide();
-    selectedItem = items[index];
-    textController.text =
-        selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
-    widget.onChanged(items[index]);
-    if (widget.initialItem == null) {
-      textController.clear();
-      selectedItem = null;
+    if (items.isNotEmpty) {
+      selectedItem = items[index];
+      textController.text =
+          selectedItemConvertor(listData: selectedItem) ?? "${selectedItem}";
+      widget.onChanged(items[index]);
+
+      ///If the onChange method in the dropdown does not set the initial item, none of the items will be selected.
+      if (widget.initialItem == null) {
+        textController.clear();
+        selectedItem = null;
+        setState(() {});
+      }
+      focusedIndex = -1;
       setState(() {});
     }
-    focusedIndex = -1;
-    setState(() {});
   }
   final GlobalKey contentKey = GlobalKey();
 
@@ -598,7 +610,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       );
     }
 
-    //todo: remove this comment brackets when issue found!
     if (value.isEmpty) {
       onSearchCalled("");
     } else {

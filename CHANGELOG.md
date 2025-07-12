@@ -1,3 +1,6 @@
+# 1.0.4+1
+empty list enter press issue fixed and onChange focus issue fixed
+
 # 1.0.4
 ui component added or shortcut issue fixed  
 
