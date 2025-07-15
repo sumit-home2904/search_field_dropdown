@@ -174,16 +174,18 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         final screenHeight = MediaQuery.of(context).size.height;
         double y = render1.localToGlobal(Offset.zero).dy;
 
-        if(Platform.isAndroid ||Platform.isIOS){
+        if (Platform.isAndroid || Platform.isIOS) {
           print("screenHeight $screenHeight");
           print("y $y");
           // print("MediaQuery.of(context).viewInsets.bottom ${keyBoardHeight}");
           print("render2.size.height ${render2.size.height}");
-          print("calculation ${screenHeight - y -MediaQuery.of(context).viewInsets.bottom}");
-          if (screenHeight - y -(MediaQuery.of(context).size.height*0.4)< render2.size.height) {
+          print(
+              "calculation ${screenHeight - y - MediaQuery.of(context).viewInsets.bottom}");
+          if (screenHeight - y - (MediaQuery.of(context).size.height * 0.4) <
+              render2.size.height) {
             displayOverlayBottom = false;
           }
-        }else {
+        } else {
           if (screenHeight - y < render2.size.height) {
             displayOverlayBottom = false;
           }

@@ -170,7 +170,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// call for [listPadding] to provide padding for the list view
   final EdgeInsets? listPadding;
 
-
   /// When the value of [canShowButton] is true, the add button becomes visible.
   final bool canShowButton;
 
@@ -414,6 +413,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       setState(() {});
     }
   }
+
   final GlobalKey contentKey = GlobalKey();
 
   @override
@@ -421,7 +421,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     return PopScope(
       // canPop: !widget.controller.isShowing, // Only allow pop when dropdown is hidden
 
-      onPopInvokedWithResult:(didPop, result) {
+      onPopInvokedWithResult: (didPop, result) {
         if (widget.controller.isShowing) {
           widget.controller.hide();
         }
@@ -451,10 +451,11 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                 scrollToFocusedItem();
               } else {
                 focusedIndex = 0;
-                RenderBox? renderBox =
-                    itemListKey.currentContext?.findRenderObject() as RenderBox?;
+                RenderBox? renderBox = itemListKey.currentContext
+                    ?.findRenderObject() as RenderBox?;
                 scrollController.jumpTo(
-                  focusedIndex * renderBox!.size.height, // Adjust height per item
+                  focusedIndex *
+                      renderBox!.size.height, // Adjust height per item
                 );
               }
             });
@@ -553,8 +554,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
               },
               child: TextFormField(
                 key: textFieldKey,
-                enableInteractiveSelection:
-                    widget.enableInteractiveSelection ?? (!widget.fieldReadOnly),
+                enableInteractiveSelection: widget.enableInteractiveSelection ??
+                    (!widget.fieldReadOnly),
                 style: widget.textStyle,
                 keyboardType: widget.keyboardType,
                 inputFormatters: widget.inputFormatters,

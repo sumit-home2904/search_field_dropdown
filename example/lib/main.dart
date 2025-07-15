@@ -42,7 +42,7 @@ class DropDownClass extends StatefulWidget {
 
 class _DropDownClassState extends State<DropDownClass> {
   final countryController = OverlayPortalController();
-  List<OverlayPortalController> countryController1=[];
+  List<OverlayPortalController> countryController1 = [];
   final stateController = OverlayPortalController();
   final cityController = OverlayPortalController();
   final itemController = OverlayPortalController();
@@ -100,11 +100,16 @@ class _DropDownClassState extends State<DropDownClass> {
     loadState();
     loadCountry();
 
-    countryController1=List.generate(15,(index) =>  OverlayPortalController());
+    countryController1 =
+        List.generate(15, (index) => OverlayPortalController());
   }
-  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey1 = GlobalKey<SearchFieldDropdownState<String>>();
-  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey2 = GlobalKey<SearchFieldDropdownState<String>>();
-  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey3 = GlobalKey<SearchFieldDropdownState<String>>();
+
+  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey1 =
+      GlobalKey<SearchFieldDropdownState<String>>();
+  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey2 =
+      GlobalKey<SearchFieldDropdownState<String>>();
+  final GlobalKey<SearchFieldDropdownState<String>> dropdownKey3 =
+      GlobalKey<SearchFieldDropdownState<String>>();
 
   @override
   Widget build(BuildContext context) {
@@ -192,10 +197,8 @@ class _DropDownClassState extends State<DropDownClass> {
                       ),
                     ),
                     onChanged: (CountryModel? value) {
-                      selectedCountry=value;
-                      setState(() {
-
-                      });
+                      selectedCountry = value;
+                      setState(() {});
                     },
                     onSearch: (value) async {
                       return countryList.where((element) {
@@ -428,7 +431,6 @@ class _DropDownClassState extends State<DropDownClass> {
               //   },),
               // ),
 
-
               Expanded(
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -436,7 +438,11 @@ class _DropDownClassState extends State<DropDownClass> {
                   itemBuilder: (context, index) {
                     return InkWell(
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) =>DropDownClass() ,));
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DropDownClass(),
+                            ));
                       },
                       child: SearchFieldDropdown<CountryModel>(
                         // focusNode: focusNode,
@@ -499,17 +505,19 @@ class _DropDownClassState extends State<DropDownClass> {
                           return Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 5),
-                            margin:
-                            EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
+                            margin: EdgeInsets.fromLTRB(
+                                5, index == 0 ? 7 : 2, 5, 1),
                             decoration: BoxDecoration(
-                                color:
-                                isSelected ? Colors.green : Colors.transparent,
+                                color: isSelected
+                                    ? Colors.green
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(2)),
                             child: Text(
                               item.name,
                               style: TextStyle(
                                   fontSize: 12,
-                                  color: isSelected ? Colors.white : Colors.black,
+                                  color:
+                                      isSelected ? Colors.white : Colors.black,
                                   fontWeight: FontWeight.w400),
                             ),
                           );
@@ -523,7 +531,8 @@ class _DropDownClassState extends State<DropDownClass> {
                         },
                       ),
                     );
-                  },),
+                  },
+                ),
               )
             ],
           ),

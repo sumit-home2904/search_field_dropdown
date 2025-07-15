@@ -6,7 +6,7 @@ issue_tracker: https://github.com/sumit-home2904/search_field_dropdown/issues
 Publisher: Sumit Sharma
 license: MIT
 
-version: 1.0.4+1
+version: 1.0.4+2
 
 environment:
   sdk: ^3.5.3

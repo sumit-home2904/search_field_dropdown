@@ -1,3 +1,6 @@
+# 1.0.4+2
+mobile version drop-down issue fixed and other bug fixed
+
 # 1.0.4+1
 empty list enter press issue fixed and onChange focus issue fixed
 
