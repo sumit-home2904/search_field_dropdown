@@ -1,4 +1,4 @@
-# 1.0.4+2
+# 1.0.5
 mobile version drop-down issue fixed and other bug fixed
 
 # 1.0.4+1
