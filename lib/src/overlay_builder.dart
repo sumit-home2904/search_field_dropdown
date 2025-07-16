@@ -175,12 +175,12 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         double y = render1.localToGlobal(Offset.zero).dy;
 
         if (Platform.isAndroid || Platform.isIOS) {
-          print("screenHeight $screenHeight");
-          print("y $y");
+          // print("screenHeight $screenHeight");
+          // print("y $y");
           // print("MediaQuery.of(context).viewInsets.bottom ${keyBoardHeight}");
-          print("render2.size.height ${render2.size.height}");
-          print(
-              "calculation ${screenHeight - y - MediaQuery.of(context).viewInsets.bottom}");
+          // print("render2.size.height ${render2.size.height}");
+          // print(
+          //     "calculation ${screenHeight - y - MediaQuery.of(context).viewInsets.bottom}");
           if (screenHeight - y - (MediaQuery.of(context).size.height * 0.4) <
               render2.size.height) {
             displayOverlayBottom = false;
@@ -366,8 +366,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   }
 
   Offset setOffset() {
-    print(Offset(widget.dropdownOffset?.dx ?? 0,
-        displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10));
+    // print(Offset(widget.dropdownOffset?.dx ?? 0,
+    //     displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10));
     return Offset(widget.dropdownOffset?.dx ?? 0,
         displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10);
   }
