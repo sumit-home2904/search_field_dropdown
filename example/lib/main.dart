@@ -149,6 +149,7 @@ class _DropDownClassState extends State<DropDownClass> {
                 children: [
                   Expanded(
                       child: SearchFieldDropdown<CountryModel>(
+                        context: context,
                     focusNode: focusNode,
                     enableInteractiveSelection: true,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -238,6 +239,7 @@ class _DropDownClassState extends State<DropDownClass> {
                   const SizedBox(width: 15),
                   Expanded(
                       child: SearchFieldDropdown<StatesModel>(
+                        context: context,
                     focusNode: focusNode2,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     controller: stateController,
@@ -329,6 +331,7 @@ class _DropDownClassState extends State<DropDownClass> {
                   const SizedBox(width: 15),
                   Expanded(
                       child: SearchFieldDropdown<CityModel>(
+                        context: context,
                     focusNode: focusNode3,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     controller: cityController,
@@ -441,11 +444,13 @@ class _DropDownClassState extends State<DropDownClass> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DropDownClass(),
+                              builder: (context) => const DropDownClass(),
                             ));
                       },
                       child: SearchFieldDropdown<CountryModel>(
+                        context: context,
                         // focusNode: focusNode,
+                        // overlayHeight: 400,
                         enableInteractiveSelection: true,
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         controller: countryController1[index],

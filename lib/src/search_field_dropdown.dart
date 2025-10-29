@@ -196,6 +196,8 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 
   final double? elevation;
 
+  final BuildContext context;
+
   const SearchFieldDropdown(
       {super.key,
       this.onTap,
@@ -209,7 +211,8 @@ class SearchFieldDropdown<T> extends StatefulWidget {
       this.initialItem,
       this.cursorWidth,
       this.keyboardType,
-      this.cursorRadius,
+        required this.context,
+        this.cursorRadius,
       this.cursorHeight,
       this.loaderWidget,
       this.errorMessage,
@@ -315,8 +318,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   void didUpdateWidget(covariant SearchFieldDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.item != oldWidget.item ||
-        widget.onSearch != oldWidget.onSearch) {
+    if (widget.item != oldWidget.item ) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         items = widget.item;
         setState(() {});
@@ -336,14 +338,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           selectedItem = null;
           // widget.onChanged(null);
           textController.clear();
+          setState(() {});
           // if (widget.onSearch != null) widget.onSearch!("");
         } else {
           selectedItem = widget.initialItem;
           textController.text =
               selectedItemConvertor(listData: widget.initialItem) ?? "";
+          setState(() {});
+
         }
       }
-      setState(() {});
     });
   }
 
@@ -419,8 +423,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // canPop: !widget.controller.isShowing, // Only allow pop when dropdown is hidden
-
       onPopInvokedWithResult: (didPop, result) {
         if (widget.controller.isShowing) {
           widget.controller.hide();
@@ -498,6 +500,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                 child: Stack(
                   children: [
                     OverlayBuilder(
+                      context: widget.context,
                       key: contentKey,
                       item: items,
                       layerLink: layerLink,

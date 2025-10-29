@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
+import 'package:search_field_dropdown/src/animated_section.dart';
 
 class OverlayBuilder<T> extends StatefulWidget {
   final List<T> item;
@@ -37,7 +37,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
   final double? elevation;
-
+  final BuildContext context;
   const OverlayBuilder({
     super.key,
     this.renderBox,
@@ -46,6 +46,7 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.initialItem,
     this.cursorRadius,
     this.loaderWidget,
+    required this.context,
     required this.itemListKey,
     required this.addButtonKey,
     required this.isKeyboardNavigation,
@@ -174,13 +175,9 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         final screenHeight = MediaQuery.of(context).size.height;
         double y = render1.localToGlobal(Offset.zero).dy;
 
-        if (Platform.isAndroid || Platform.isIOS) {
-          // print("screenHeight $screenHeight");
-          // print("y $y");
-          // print("MediaQuery.of(context).viewInsets.bottom ${keyBoardHeight}");
-          // print("render2.size.height ${render2.size.height}");
-          // print(
-          //     "calculation ${screenHeight - y - MediaQuery.of(context).viewInsets.bottom}");
+        if (!kIsWeb &&
+            (defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS)) {
           if (screenHeight - y - (MediaQuery.of(context).size.height * 0.4) <
               render2.size.height) {
             displayOverlayBottom = false;
