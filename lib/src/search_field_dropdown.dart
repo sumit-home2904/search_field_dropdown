@@ -502,8 +502,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     OverlayBuilder(
                       context: widget.context,
                       key: contentKey,
+                      fieldKey: textFieldKey,
                       item: items,
                       layerLink: layerLink,
+                      readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
                       renderBox: renderBox,
                       changeKeyBool: changeKeyBool,
                       scrollController: scrollController,

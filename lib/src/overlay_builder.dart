@@ -9,6 +9,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final LayerLink layerLink;
   final GlobalKey itemListKey;
   final GlobalKey addButtonKey;
+  final GlobalKey fieldKey;
   final ScrollController scrollController;
   final T? initialItem;
   final int focusedIndex;
@@ -18,6 +19,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final bool isKeyboardNavigation;
   final Text? errorMessage;
   final bool canShowButton;
+  final bool readOnly;
   final TextStyle textStyle;
   final Radius? cursorRadius;
   final RenderBox? renderBox;
@@ -45,6 +47,8 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.listPadding,
     this.initialItem,
     this.cursorRadius,
+    required this.fieldKey,
+    required this.readOnly,
     this.loaderWidget,
     required this.context,
     required this.itemListKey,
@@ -178,8 +182,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         if (!kIsWeb &&
             (defaultTargetPlatform == TargetPlatform.android ||
                 defaultTargetPlatform == TargetPlatform.iOS)) {
-          if (screenHeight - y - (MediaQuery.of(context).size.height * 0.4) <
-              render2.size.height) {
+          if (screenHeight - y - (widget.readOnly?50:MediaQuery.of(context).size.height * 0.4) <
+              (widget.overlayHeight??0)) {
             displayOverlayBottom = false;
           }
         } else {
@@ -219,41 +223,67 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return CompositedTransformFollower(
-        link: widget.layerLink,
-        offset: setOffset(),
-        followerAnchor:
-            displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
-        child: LayoutBuilder(builder: (context, c) {
-          return SizedBox(
-            height: calculateHeight() + 4,
-            width: widget.renderBox?.size.width ?? c.maxWidth,
-            child: Card(
-              elevation: widget.elevation,
-              color: Colors.blue,
-              margin: EdgeInsets.zero,
-              child: Container(
-                key: key1,
-                height: calculateHeight() + 4,
-                decoration: menuDecoration(),
-                child: AnimatedSection(
-                  expand: true,
-                  animationDismissed: widget.controller.hide,
-                  axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
-                  child: Container(
-                      key: key2,
-                      height: calculateHeight() + 4,
-                      width: MediaQuery.sizeOf(context).width,
-                      child: widget.isApiLoading
-                          ? loaderWidget()
-                          : (widget.item).isEmpty
-                              ? emptyErrorWidget()
-                              : uiListWidget()),
+    // print(widget.dropdownOffset?.dx);
+    final RenderBox? renderBox =
+    widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final offset = renderBox!.localToGlobal(Offset.zero);
+    final mediaQuery = MediaQuery.of(context);
+    // final safeTop = mediaQuery.padding.top;
+    // final safeBottom = mediaQuery.viewInsets.bottom;
+    final screenHeight = mediaQuery.size.height;
+
+//     // print(offset.dy>(widget.overlayHeight??0));
+//     // print(offset.dy);
+//     print((widget.overlayHeight??0));
+//     // print(safeBottom);
+//     // print(screenHeight);
+//     print(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)));
+//     print(displayOverlayBottom);
+//
+// print(!displayOverlayBottom? (offset.dy-50)>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
+//     :(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)));
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight:!displayOverlayBottom ? (offset.dy-50)>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
+            :(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)),
+      ),
+      // height:
+      child: CompositedTransformFollower(
+          link: widget.layerLink,
+          offset: setOffset(),
+          followerAnchor:
+              displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
+          child: LayoutBuilder(builder: (context, c) {
+            return SizedBox(
+              height: calculateHeight() + 4,
+              width: widget.renderBox?.size.width ?? c.maxWidth,
+              child: Card(
+                elevation: widget.elevation,
+                color: Colors.blue,
+                margin: EdgeInsets.zero,
+                child: Container(
+                  key: key1,
+                  height: calculateHeight() + 4,
+                  decoration: menuDecoration(),
+                  child: AnimatedSection(
+                    expand: true,
+                    animationDismissed: widget.controller.hide,
+                    axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+                    child: Container(
+                        key: key2,
+                        height: calculateHeight() + 4,
+                        width: MediaQuery.sizeOf(context).width,
+                        child: widget.isApiLoading
+                            ? loaderWidget()
+                            : (widget.item).isEmpty
+                                ? emptyErrorWidget()
+                                : uiListWidget()),
+                  ),
                 ),
               ),
-            ),
-          );
-        }));
+            );
+          })),
+    );
   }
 
   /// This function returns the UI of drop-down tiles when the user clicks on
