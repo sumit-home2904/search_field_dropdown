@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
@@ -178,18 +179,33 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       if (render1 != null && render2 != null) {
         final screenHeight = MediaQuery.of(context).size.height;
         double y = render1.localToGlobal(Offset.zero).dy;
+// print("calcilaffgh--> ${y - (widget.readOnly?0:MediaQuery.of(context).size.height * 0.4)}");
+        final RenderBox? renderBox =
+        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+        final offset = renderBox!.localToGlobal(Offset.zero);
+        final mediaQuery = MediaQuery.of(context);
+        // final safeTop = mediaQuery.padding.top;
+        // final safeBottom = mediaQuery.viewInsets.bottom;
+        // final screenHeight = mediaQuery.size.height;
+        print("calcilaffgh--> ${(screenHeight - y - render1.size.height)}");
+        print("calcilaffgh--> ${render2.size.height + 50}");
 
         if (!kIsWeb &&
             (defaultTargetPlatform == TargetPlatform.android ||
                 defaultTargetPlatform == TargetPlatform.iOS)) {
-          if (screenHeight - y - (widget.readOnly?50:MediaQuery.of(context).size.height * 0.4) <
-              (widget.overlayHeight??0)) {
+          if ( y - (widget.readOnly?0:MediaQuery.of(context).size.height * 0.4) >
+              (widget.readOnly?screenHeight-150:50)) {
             displayOverlayBottom = false;
           }
         } else {
           if (screenHeight - y < render2.size.height) {
             displayOverlayBottom = false;
           }
+          // if ((screenHeight - y - render1.size.height) > render2.size.height + 50) {
+          //   displayOverlayBottom = false; // Not enough space below, open upside
+          // } else {
+          //   displayOverlayBottom = true; // Enough space below, open downside
+          // }
         }
 
         setState(() {}); // Update the state after calculation.
@@ -221,6 +237,17 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     }
   }
 
+  double customSize(){
+    final RenderBox? renderBox =
+    widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    final offset = renderBox!.localToGlobal(Offset.zero);
+    final mediaQuery = MediaQuery.of(context);
+    // final safeTop = mediaQuery.padding.top;
+    // final safeBottom = mediaQuery.viewInsets.bottom;
+    final screenHeight = mediaQuery.size.height;
+    return !displayOverlayBottom ? (offset.dy-50-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
+        :(screenHeight-offset.dy-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(   widget.readOnly ?100:(screenHeight* 0.4));
+  }
   @override
   Widget build(BuildContext context) {
     // print(widget.dropdownOffset?.dx);
@@ -232,20 +259,22 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     // final safeBottom = mediaQuery.viewInsets.bottom;
     final screenHeight = mediaQuery.size.height;
 
-//     // print(offset.dy>(widget.overlayHeight??0));
-//     // print(offset.dy);
-//     print((widget.overlayHeight??0));
+    // print((screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0));
+    // print(screenHeight-offset.dy-50-(widget.readOnly?0:(screenHeight* 0.4)));
+    // print((widget.overlayHeight??0));
 //     // print(safeBottom);
 //     // print(screenHeight);
 //     print(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)));
-//     print(displayOverlayBottom);
-//
-// print(!displayOverlayBottom? (offset.dy-50)>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
-//     :(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)));
+    print(displayOverlayBottom);
+// //
+print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
+    :(screenHeight-offset.dy-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(   widget.readOnly ?100:(screenHeight* 0.4)));
+
     return Container(
-      constraints: BoxConstraints(
-        maxHeight:!displayOverlayBottom ? (offset.dy-50)>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
-            :(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)),
+      constraints:Platform.isWindows || Platform.isMacOS?null:  BoxConstraints(
+        // maxHeight:!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
+        //     :(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(widget.readOnly ?0:(screenHeight* 0.4)),
+        maxHeight: customSize()<0?widget.overlayHeight??0:customSize()
       ),
       // height:
       child: CompositedTransformFollower(
