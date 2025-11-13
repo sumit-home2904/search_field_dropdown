@@ -451,7 +451,7 @@ class _DropDownClassState extends State<DropDownClass> {
                         child: SearchFieldDropdown<CountryModel>(
                           context: context,
                           // focusNode: focusNode,
-                          overlayHeight: 400,
+                          overlayHeight: 250,
                           enableInteractiveSelection: true,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           controller: countryController1[index],
