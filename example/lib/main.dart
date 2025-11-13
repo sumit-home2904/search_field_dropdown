@@ -456,7 +456,7 @@ class _DropDownClassState extends State<DropDownClass> {
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           controller: countryController1[index],
                           initialItem: selectedCountry,
-                          // fieldReadOnly: true,
+                          fieldReadOnly: true,
                           item: countryList,
                           textStyle: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w400),

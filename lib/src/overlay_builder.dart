@@ -246,7 +246,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     // final safeBottom = mediaQuery.viewInsets.bottom;
     final screenHeight = mediaQuery.size.height;
     return !displayOverlayBottom ? (offset.dy-50-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
-        :(screenHeight-offset.dy-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(   widget.readOnly ?100:(screenHeight* 0.4));
+        :(screenHeight-offset.dy-50-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(   widget.readOnly ?100:(screenHeight* 0.4));
   }
   @override
   Widget build(BuildContext context) {
