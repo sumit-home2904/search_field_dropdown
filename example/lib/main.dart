@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
           primary: Colors.deepPurple,
         ),
         appBarTheme: const AppBarTheme(
-          color: Colors.deepPurple,
+          backgroundColor: Colors.deepPurple,
         ),
         useMaterial3: true,
       ),
@@ -456,7 +456,7 @@ class _DropDownClassState extends State<DropDownClass> {
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           controller: countryController1[index],
                           initialItem: selectedCountry,
-                          fieldReadOnly: true,
+                          // fieldReadOnly: true,
                           item: countryList,
                           textStyle: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w400),
