@@ -1,3 +1,6 @@
+# 1.1.0
+bug fixed
+
 # 1.0.5
 mobile version drop-down issue fixed and other bug fixed
 

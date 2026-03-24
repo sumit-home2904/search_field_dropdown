@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
@@ -40,7 +39,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
   final double? elevation;
-  final BuildContext context;
+
   const OverlayBuilder({
     super.key,
     this.renderBox,
@@ -51,7 +50,6 @@ class OverlayBuilder<T> extends StatefulWidget {
     required this.fieldKey,
     required this.readOnly,
     this.loaderWidget,
-    required this.context,
     required this.itemListKey,
     required this.addButtonKey,
     required this.isKeyboardNavigation,
@@ -91,7 +89,23 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   final GlobalKey errorButtonKey = GlobalKey();
   final key1 = GlobalKey(), key2 = GlobalKey();
 
-  /// calculate drop-down height base on item length
+  /// Reusable timer for scroll-hover index tracking — prevents per-event allocations
+  late final SearchTimerMethod _hoverScrollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _hoverScrollTimer = SearchTimerMethod(milliseconds: 300);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialItem != null) {
+        selectedItem = widget.initialItem as T;
+      }
+      checkRenderObjects();
+    });
+  }
+
+  /// Calculate drop-down height based on item length
   double baseOnHeightCalculate() {
     try {
       final context = widget.addButtonKey.currentContext;
@@ -99,23 +113,21 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       final errorKeyContext = errorButtonKey.currentContext;
       double addButtonHeight = 0;
       double errorButtonHeight = 0;
-      double itemHeight = 40; // Default height
+      double itemHeight = 40;
 
-      // Calculate add button height
       if (context != null) {
         final renderBox = context.findRenderObject() as RenderBox?;
         addButtonHeight = renderBox?.size.height ?? 0.0;
       }
 
-      // Calculate item height
       if (itemKeyContext != null) {
         final renderBox = itemKeyContext.findRenderObject() as RenderBox?;
-        itemHeight = renderBox?.size.height ?? 40; // Default to 40
+        itemHeight = renderBox?.size.height ?? 40;
       }
 
       if (errorKeyContext != null) {
         final renderBox = errorKeyContext.findRenderObject() as RenderBox?;
-        errorButtonHeight = renderBox?.size.height ?? 40; // Default to 40
+        errorButtonHeight = renderBox?.size.height ?? 40;
       }
 
       if (widget.canShowButton) {
@@ -132,7 +144,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
           return widget.item.length * itemHeight + 10;
         }
         if (widget.isApiLoading) {
-          return 150; // Default loading height
+          return 150;
         } else {
           return widget.errorWidgetHeight ??
               (errorButtonHeight + addButtonHeight + 40);
@@ -143,73 +155,47 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     }
   }
 
-  /// The height of the drop-down container is calculated based on the item length or
-  /// the add button, and when no items are available, the default pass height is displayed.
   double calculateHeight() {
-    const double staticHeight = 150.0; // Static value fallback
+    const double staticHeight = 150.0;
     final double calculatedHeight = baseOnHeightCalculate();
-
-    // If widget.overlayHeight is not provided, use staticHeight
     final double maxHeight = widget.overlayHeight ?? staticHeight;
-
-    // Return the smaller value between the calculated height and maxHeight
     return calculatedHeight > maxHeight ? maxHeight : calculatedHeight;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.initialItem != null) {
-        selectedItem = (widget.initialItem as T);
-      }
-
-      checkRenderObjects(); // Start checking render objects.
-    });
-  }
-
-  /// use for move up and down when not scroll available
+  /// Determine whether dropdown opens below or above the text field.
   void checkRenderObjects() {
-    if (key1.currentContext != null && key2.currentContext != null) {
-      final RenderBox? render1 =
-          key1.currentContext?.findRenderObject() as RenderBox?;
-      final RenderBox? render2 =
-          key2.currentContext?.findRenderObject() as RenderBox?;
+    if (!mounted) return;
+    if (key1.currentContext == null || key2.currentContext == null) return;
 
-      if (render1 != null && render2 != null) {
-        final screenHeight = MediaQuery.of(context).size.height;
-        double y = render1.localToGlobal(Offset.zero).dy;
-// print("calcilaffgh--> ${y - (widget.readOnly?0:MediaQuery.of(context).size.height * 0.4)}");
-        final RenderBox? renderBox =
-        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-        final offset = renderBox!.localToGlobal(Offset.zero);
-        final mediaQuery = MediaQuery.of(context);
-        // final safeTop = mediaQuery.padding.top;
-        // final safeBottom = mediaQuery.viewInsets.bottom;
-        // final screenHeight = mediaQuery.size.height;
-        print("calcilaffgh--> ${(screenHeight - y - render1.size.height)}");
-        print("calcilaffgh--> ${render2.size.height + 50}");
+    final RenderBox? render1 =
+        key1.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? render2 =
+        key2.currentContext?.findRenderObject() as RenderBox?;
 
-        if (!kIsWeb &&
-            (defaultTargetPlatform == TargetPlatform.android ||
-                defaultTargetPlatform == TargetPlatform.iOS)) {
-          if ( y - (widget.readOnly?0:MediaQuery.of(context).size.height * 0.4) >
-              (widget.readOnly?screenHeight-150:50)) {
-            displayOverlayBottom = false;
-          }
-        } else {
-          if (screenHeight - y < render2.size.height) {
-            displayOverlayBottom = false;
-          }
-          // if ((screenHeight - y - render1.size.height) > render2.size.height + 50) {
-          //   displayOverlayBottom = false; // Not enough space below, open upside
-          // } else {
-          //   displayOverlayBottom = true; // Enough space below, open downside
-          // }
-        }
+    if (render1 == null || render2 == null) return;
 
-        setState(() {}); // Update the state after calculation.
-      }
+    final screenHeight = MediaQuery.of(context).size.height;
+    final double y = render1.localToGlobal(Offset.zero).dy;
+
+    bool newDisplayOverlayBottom;
+
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      newDisplayOverlayBottom = !(y -
+              (widget.readOnly
+                  ? 0
+                  : MediaQuery.of(context).size.height * 0.4) >
+          (widget.readOnly ? screenHeight - 150 : 50));
+    } else {
+      // Desktop / web: check if there is enough space below
+      newDisplayOverlayBottom = (screenHeight - y) >= render2.size.height;
+    }
+
+    if (newDisplayOverlayBottom != displayOverlayBottom) {
+      setState(() {
+        displayOverlayBottom = newDisplayOverlayBottom;
+      });
     }
   }
 
@@ -219,114 +205,123 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
     if (widget.initialItem != oldWidget.initialItem) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          selectedItem = (widget.initialItem as T) ?? null;
-        });
+        if (mounted) {
+          setState(() {
+            selectedItem = widget.initialItem;
+          });
+        }
       });
     }
 
-    // Check if the item list or its length has changed
     if (oldWidget.item != widget.item ||
         oldWidget.item.length != widget.item.length) {
-      // Trigger a recalculation and rebuild
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          baseOnHeightCalculate();
-        });
+        if (mounted) setState(() {});
       });
     }
   }
 
-  double customSize(){
+  /// Calculate the overlay height that fits on screen (never negative).
+  double customSize() {
     final RenderBox? renderBox =
-    widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    final offset = renderBox!.localToGlobal(Offset.zero);
-    final mediaQuery = MediaQuery.of(context);
-    // final safeTop = mediaQuery.padding.top;
-    // final safeBottom = mediaQuery.viewInsets.bottom;
-    final screenHeight = mediaQuery.size.height;
-    return !displayOverlayBottom ? (offset.dy-50-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
-        :(screenHeight-offset.dy-50-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(   widget.readOnly ?100:(screenHeight* 0.4));
+        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return widget.overlayHeight ?? 150;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final keyboardOffset =
+        widget.readOnly ? 0.0 : screenHeight * 0.4;
+
+    if (!displayOverlayBottom) {
+      final available = offset.dy - 50 - keyboardOffset;
+      final max = widget.overlayHeight ?? 0;
+      return available > max ? max : available.clamp(0, double.infinity);
+    } else {
+      final available = screenHeight - offset.dy - 50 - keyboardOffset;
+      final max = widget.overlayHeight ?? 0;
+      return available > max ? max : available.clamp(0, double.infinity);
+    }
   }
+
   @override
   Widget build(BuildContext context) {
-    // print(widget.dropdownOffset?.dx);
     final RenderBox? renderBox =
-    widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    final offset = renderBox!.localToGlobal(Offset.zero);
-    final mediaQuery = MediaQuery.of(context);
-    // final safeTop = mediaQuery.padding.top;
-    // final safeBottom = mediaQuery.viewInsets.bottom;
-    final screenHeight = mediaQuery.size.height;
+        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return const SizedBox.shrink();
 
-    // print((screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0));
-    // print(screenHeight-offset.dy-50-(widget.readOnly?0:(screenHeight* 0.4)));
-    // print((widget.overlayHeight??0));
-//     // print(safeBottom);
-//     // print(screenHeight);
-//     print(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight/3.5)));
-    print(displayOverlayBottom);
-// //
-print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
-    :(screenHeight-offset.dy-(  widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(   widget.readOnly ?100:(screenHeight* 0.4)));
+    // Compute a safe max height for the dropdown card.
+    // customSize() uses the field's screen position to decide how much room is
+    // available above or below the text field.
+    final double rawSize = customSize();
+    final double maxH =
+        rawSize > 0 ? rawSize : (widget.overlayHeight ?? 150);
 
-    return Container(
-      constraints:Platform.isWindows || Platform.isMacOS?null:  BoxConstraints(
-        // maxHeight:!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):offset.dy- 50
-        //     :(screenHeight-offset.dy-(widget.readOnly?0:(screenHeight* 0.4)))>(widget.overlayHeight??0)?(widget.overlayHeight??0):screenHeight-offset.dy-50-(widget.readOnly ?0:(screenHeight* 0.4)),
-        maxHeight: customSize()<0?widget.overlayHeight??0:customSize()
-      ),
-      // height:
-      child: CompositedTransformFollower(
+    // SizedBox.expand fills the full overlay area for correct hit-testing —
+    // the dropdown's visual position (via CompositedTransformFollower) is
+    // always inside this layout bounds, so scroll/click events reach the
+    // inner ListView instead of the background.
+    //
+    // IMPORTANT: SizedBox.expand passes TIGHT constraints to its child.
+    // UnconstrainedBox breaks that chain so ConstrainedBox(maxHeight) and
+    // the inner SizedBox(height: calculateHeight()) work as intended.
+    // Without this, the card would expand to full-screen height and
+    // SizeTransition would show items starting from the very bottom.
+    return SizedBox.expand(
+      child: UnconstrainedBox(
+        alignment: Alignment.topLeft,
+        clipBehavior: Clip.none,
+        child: CompositedTransformFollower(
           link: widget.layerLink,
           offset: setOffset(),
           followerAnchor:
               displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
-          child: LayoutBuilder(builder: (context, c) {
-            return SizedBox(
-              height: calculateHeight() + 4,
-              width: widget.renderBox?.size.width ?? c.maxWidth,
-              child: Card(
-                elevation: widget.elevation,
-                color: Colors.blue,
-                margin: EdgeInsets.zero,
-                child: Container(
-                  key: key1,
-                  height: calculateHeight() + 4,
-                  decoration: menuDecoration(),
-                  child: AnimatedSection(
-                    expand: true,
-                    animationDismissed: widget.controller.hide,
-                    axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
-                    child: Container(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxH),
+            child: LayoutBuilder(builder: (context, c) {
+              return SizedBox(
+                height: calculateHeight() + 4,
+                width: widget.renderBox?.size.width ?? c.maxWidth,
+                child: Card(
+                  elevation: widget.elevation,
+                  color: Colors.transparent,
+                  margin: EdgeInsets.zero,
+                  child: Container(
+                    key: key1,
+                    height: calculateHeight() + 4,
+                    decoration: menuDecoration(),
+                    child: AnimatedSection(
+                      expand: true,
+                      animationDismissed: widget.controller.hide,
+                      axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+                      child: Container(
                         key: key2,
                         height: calculateHeight() + 4,
                         width: MediaQuery.sizeOf(context).width,
                         child: widget.isApiLoading
                             ? loaderWidget()
-                            : (widget.item).isEmpty
+                            : widget.item.isEmpty
                                 ? emptyErrorWidget()
-                                : uiListWidget()),
+                                : uiListWidget(),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          })),
+              );
+            }),
+          ),
+        ),
+      ),
     );
   }
 
-  /// This function returns the UI of drop-down tiles when the user clicks on
-  /// the drop-down. After that, how the drop-down will look is all defined in
-  /// this function.
-  ///
-  // bool isKeyboardNavigation = false;
+
+
   Widget uiListWidget() {
     return NotificationListener<OverscrollIndicatorNotification>(
       onNotification: (notification) {
         notification.disallowIndicator();
         return true;
       },
-      child: Container(
+      child: SizedBox(
         height: calculateHeight(),
         child: Column(
           children: [
@@ -338,70 +333,69 @@ print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.
                         widget.addButton ?? SizedBox(key: widget.addButtonKey)),
             const SizedBox(height: 2),
             Expanded(
-                child: Listener(
-              onPointerSignal: (event) {
-                SearchTimerMethod(milliseconds: 300).run(() {
-                  RenderBox? renderBox = widget.itemListKey.currentContext
-                      ?.findRenderObject() as RenderBox?;
-                  final double itemHeight = renderBox?.size.height ?? 30;
-
-                  final double firstVisibleIndex =
-                      widget.scrollController.offset / itemHeight;
-
-                  final int museCourse =
-                      ((event.localPosition.dy / itemHeight) - 1).ceil();
-
-                  final int scrollIndex =
-                      firstVisibleIndex.toInt() + museCourse;
-                  widget.changeIndex(scrollIndex);
-                });
-              },
-              child: ListView.builder(
-                controller: widget.scrollController,
-                shrinkWrap: true,
-                physics: const ClampingScrollPhysics(),
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: false,
-                padding: widget.listPadding ?? EdgeInsets.zero,
-                itemCount: widget.item.length,
-                itemBuilder: (_, index) {
-                  bool selected = widget.focusedIndex == index;
-                  // print(index);
-                  return MouseRegion(
-                    onHover: (event) {
-                      widget.changeKeyBool(false);
-                    },
-                    onEnter: (event) {
-                      if (!widget.isKeyboardNavigation) {
-                        widget.changeIndex(index);
-                      }
-                    },
-                    child: InkWell(
-                      key: widget.focusedIndex == index
-                          ? widget.itemListKey
-                          : null,
-                      onTap: () => widget.onItemSelected(index),
-                      child: widget.listItemBuilder(
-                        context,
-                        widget.item[index],
-                        selected,
-                      ),
-                    ),
-                  );
+              child: Listener(
+                onPointerSignal: (event) {
+                  // Reuse the timer field — do NOT create a new instance here
+                  _hoverScrollTimer.run(() {
+                    if (!mounted) return;
+                    RenderBox? renderBox = widget.itemListKey.currentContext
+                        ?.findRenderObject() as RenderBox?;
+                    final double itemHeight = renderBox?.size.height ?? 30;
+                    final double firstVisibleIndex =
+                        widget.scrollController.offset / itemHeight;
+                    final int museCourse =
+                        ((event.localPosition.dy / itemHeight) - 1).ceil();
+                    final int scrollIndex =
+                        firstVisibleIndex.toInt() + museCourse;
+                    widget.changeIndex(scrollIndex);
+                  });
                 },
+                child: ListView.builder(
+                  controller: widget.scrollController,
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: false,
+                  padding: widget.listPadding ?? EdgeInsets.zero,
+                  itemCount: widget.item.length,
+                  itemBuilder: (_, index) {
+                    final bool selected = widget.focusedIndex == index;
+                    return MouseRegion(
+                      onHover: (event) {
+                        // Guard: only call if value actually changes
+                        if (widget.isKeyboardNavigation) {
+                          widget.changeKeyBool(false);
+                        }
+                      },
+                      onEnter: (event) {
+                        // Guard: only update index if not in keyboard nav mode
+                        if (!widget.isKeyboardNavigation &&
+                            widget.focusedIndex != index) {
+                          widget.changeIndex(index);
+                        }
+                      },
+                      child: InkWell(
+                        key: widget.focusedIndex == index
+                            ? widget.itemListKey
+                            : null,
+                        onTap: () => widget.onItemSelected(index),
+                        child: widget.listItemBuilder(
+                          context,
+                          widget.item[index],
+                          selected,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// This method returns a boolean value for the selected item from the list
-  /// or user-defined in the selected item builder. You must first define what
-  /// kind of value is visible when the user selects any type of value from the
-  /// drop-down, or that kind of data will be available in your list; otherwise,
-  /// you will encounter an error.
   bool isItemSelected(int index) {
     String? selectedValue = selectedItemConvertor(selectedItem) ?? "";
     String? selectedIndexValue = selectedItemConvertor(widget.item[index]);
@@ -412,9 +406,6 @@ print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.
     }
   }
 
-  ///This is for the drop-down container decoration. If the user wants to provide
-  /// a custom decoration, they can do so. However, if the widget is not set for
-  /// the user side, we will provide our own default decoration.
   BoxDecoration menuDecoration() {
     if (widget.menuDecoration != null) return widget.menuDecoration!;
     return BoxDecoration(
@@ -422,8 +413,6 @@ print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.
   }
 
   Offset setOffset() {
-    // print(Offset(widget.dropdownOffset?.dx ?? 0,
-    //     displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10));
     return Offset(widget.dropdownOffset?.dx ?? 0,
         displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10);
   }
@@ -435,9 +424,6 @@ print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.
     return null;
   }
 
-  /// This call displays an error message to the user when the item list is
-  /// empty or the search value is not found, helping them understand what
-  /// is happening in the UI. Additionally, the user can enter their custom message as well.
   Widget emptyErrorWidget() {
     return Container(
       key: errorButtonKey,
@@ -451,15 +437,14 @@ print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.
                   key: widget.addButtonKey,
                   child:
                       widget.addButton ?? SizedBox(key: widget.addButtonKey)),
-          Spacer(),
+          const Spacer(),
           widget.errorMessage ?? const Text("No options"),
-          Spacer(),
+          const Spacer(),
         ],
       ),
     );
   }
 
-  /// this function return loader widget
   Widget loaderWidget() {
     return Container(
       alignment: Alignment.center,
@@ -473,15 +458,16 @@ print(!displayOverlayBottom ? (offset.dy-50-(widget.readOnly?0:(screenHeight* 0.
 
 class SearchTimerMethod {
   final int milliseconds;
-  late VoidCallback action;
-  Timer? timer;
+  Timer? _timer;
 
   SearchTimerMethod({required this.milliseconds});
 
-  run(VoidCallback action) {
-    if (null != timer) {
-      timer!.cancel();
-    }
-    timer = Timer(Duration(milliseconds: milliseconds), action);
+  void run(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(Duration(milliseconds: milliseconds), action);
+  }
+
+  void cancel() {
+    _timer?.cancel();
   }
 }
