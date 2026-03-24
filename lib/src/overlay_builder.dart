@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
@@ -89,6 +88,11 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   final GlobalKey errorButtonKey = GlobalKey();
   final key1 = GlobalKey(), key2 = GlobalKey();
 
+  // Cached measurements updated after each frame
+  double _addButtonHeight = 0;
+  double _itemHeight = 40;
+  double _fieldHeight = 56; // actual rendered height of the trigger field
+
   /// Reusable timer for scroll-hover index tracking — prevents per-event allocations
   late final SearchTimerMethod _hoverScrollTimer;
 
@@ -101,99 +105,139 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       if (widget.initialItem != null) {
         selectedItem = widget.initialItem as T;
       }
+      _measureField();
+      _updateCachedHeights();
       checkRenderObjects();
     });
   }
 
-  /// Calculate drop-down height based on item length
-  double baseOnHeightCalculate() {
-    try {
-      final context = widget.addButtonKey.currentContext;
-      final itemKeyContext = widget.itemListKey.currentContext;
-      final errorKeyContext = errorButtonKey.currentContext;
-      double addButtonHeight = 0;
-      double errorButtonHeight = 0;
-      double itemHeight = 40;
-
-      if (context != null) {
-        final renderBox = context.findRenderObject() as RenderBox?;
-        addButtonHeight = renderBox?.size.height ?? 0.0;
-      }
-
-      if (itemKeyContext != null) {
-        final renderBox = itemKeyContext.findRenderObject() as RenderBox?;
-        itemHeight = renderBox?.size.height ?? 40;
-      }
-
-      if (errorKeyContext != null) {
-        final renderBox = errorKeyContext.findRenderObject() as RenderBox?;
-        errorButtonHeight = renderBox?.size.height ?? 40;
-      }
-
-      if (widget.canShowButton) {
-        if (widget.item.isNotEmpty) {
-          return widget.item.length * itemHeight +
-              errorButtonHeight +
-              addButtonHeight;
-        } else {
-          return widget.errorWidgetHeight ??
-              (errorButtonHeight + addButtonHeight + 40);
-        }
-      } else {
-        if (widget.item.isNotEmpty) {
-          return widget.item.length * itemHeight + 10;
-        }
-        if (widget.isApiLoading) {
-          return 150;
-        } else {
-          return widget.errorWidgetHeight ??
-              (errorButtonHeight + addButtonHeight + 40);
-        }
-      }
-    } catch (_) {
-      return widget.errorWidgetHeight ?? 125;
+  /// Measure the trigger field height so offsets use the real value.
+  void _measureField() {
+    if (!mounted) return;
+    final fb = widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (fb != null) {
+      final h = fb.size.height;
+      if (h != _fieldHeight) setState(() => _fieldHeight = h);
     }
   }
 
+  /// Read rendered sizes and store them so height calculation is always fresh.
+  void _updateCachedHeights() {
+    if (!mounted) return;
+    double newItemH = _itemHeight;
+    double newAddH = _addButtonHeight;
+
+    final itemCtx = widget.itemListKey.currentContext;
+    if (itemCtx != null) {
+      final rb = itemCtx.findRenderObject() as RenderBox?;
+      if (rb != null) newItemH = rb.size.height;
+    }
+
+    final addCtx = widget.addButtonKey.currentContext;
+    if (addCtx != null) {
+      final rb = addCtx.findRenderObject() as RenderBox?;
+      if (rb != null) newAddH = rb.size.height;
+    }
+
+    if (newItemH != _itemHeight || newAddH != _addButtonHeight) {
+      setState(() {
+        _itemHeight = newItemH;
+        _addButtonHeight = newAddH;
+      });
+    }
+  }
+
+  /// Calculate drop-down height based on current state.
+  /// Uses cached [_itemHeight] and [_addButtonHeight] so it stays
+  /// accurate across API-loading, empty, and populated states.
+  double baseOnHeightCalculate() {
+    // API loading takes priority — show loader regardless of items
+    if (widget.isApiLoading) return 150;
+
+    final double addH = _addButtonHeight;
+    final double itemH = _itemHeight > 0 ? _itemHeight : 40;
+
+    if (widget.canShowButton) {
+      if (widget.item.isNotEmpty) {
+        // List + optional add-button at the top
+        return widget.item.length * itemH + addH + 2;
+      } else {
+        // Empty state: error message + add-button
+        return widget.errorWidgetHeight ?? (addH + 80);
+      }
+    } else {
+      if (widget.item.isNotEmpty) {
+        return widget.item.length * itemH + 2;
+      }
+      // Empty state without add-button
+      return widget.errorWidgetHeight ?? 80;
+    }
+  }
+
+  /// Default max height when user does not provide [overlayHeight].
+  static const double _defaultMaxHeight = 250.0;
+
+  /// Final height the dropdown renders at.
+  /// = min(contentHeight, userOverlayHeight ?? 250, availableScreenSpace)
   double calculateHeight() {
-    const double staticHeight = 150.0;
-    final double calculatedHeight = baseOnHeightCalculate();
-    final double maxHeight = widget.overlayHeight ?? staticHeight;
-    return calculatedHeight > maxHeight ? maxHeight : calculatedHeight;
+    final double content = baseOnHeightCalculate();
+    final double screen = _availableScreenHeight();
+    // Cap at user's max or the 250 default
+    final double userMax = widget.overlayHeight ?? _defaultMaxHeight;
+    final double capped = content < userMax ? content : userMax;
+    // Never exceed physical space available on screen
+    final double result = (screen > 0 && capped > screen) ? screen : capped;
+    return result.clamp(0.0, double.infinity);
+  }
+
+  /// Physical screen space available above or below the field.
+  /// Uses [MediaQuery.viewInsets.bottom] for the REAL keyboard height
+  /// instead of a blanket 40% subtraction.
+  double _availableScreenHeight() {
+    final RenderBox? fb =
+        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (fb == null) return widget.overlayHeight ?? 250;
+    final offset = fb.localToGlobal(Offset.zero);
+    final mq = MediaQuery.of(context);
+    final double keyboardH = mq.viewInsets.bottom;
+    final double usableH = mq.size.height - keyboardH;
+    const double safeMargin = 8.0;
+
+    if (displayOverlayBottom) {
+      // Space from the BOTTOM of the field to the top of keyboard/screen edge
+      final double fieldBottom = offset.dy + fb.size.height;
+      return (usableH - fieldBottom - safeMargin).clamp(0.0, double.infinity);
+    } else {
+      // Space from screen top to the TOP of the field
+      return (offset.dy - safeMargin).clamp(0.0, double.infinity);
+    }
   }
 
   /// Determine whether dropdown opens below or above the text field.
+  /// Uses the field's actual position + keyboard-aware usable height.
   void checkRenderObjects() {
     if (!mounted) return;
-    if (key1.currentContext == null || key2.currentContext == null) return;
+    final RenderBox? fb =
+        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (fb == null) return;
 
-    final RenderBox? render1 =
-        key1.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? render2 =
-        key2.currentContext?.findRenderObject() as RenderBox?;
+    final mq = MediaQuery.of(context);
+    final double keyboardH = mq.viewInsets.bottom;
+    final double usableH = mq.size.height - keyboardH;
+    final offset = fb.localToGlobal(Offset.zero);
+    final double fieldBottom = offset.dy + fb.size.height;
 
-    if (render1 == null || render2 == null) return;
+    final double spaceBelow = usableH - fieldBottom;
+    final double spaceAbove = offset.dy;
+    // Use the INTENDED max height (not the screen-capped value) so the
+    // above/below decision reflects the user's desired dropdown size.
+    final double intended = widget.overlayHeight ?? _defaultMaxHeight;
 
-    final screenHeight = MediaQuery.of(context).size.height;
-    final double y = render1.localToGlobal(Offset.zero).dy;
+    // Open below if enough space; otherwise open above (like a native select)
+    final bool newBottom = spaceBelow >= intended || spaceBelow >= spaceAbove;
 
-    bool newDisplayOverlayBottom;
-
-    if (!kIsWeb &&
-        (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS)) {
-      newDisplayOverlayBottom = !(y -
-              (widget.readOnly ? 0 : MediaQuery.of(context).size.height * 0.4) >
-          (widget.readOnly ? screenHeight - 150 : 50));
-    } else {
-      // Desktop / web: check if there is enough space below
-      newDisplayOverlayBottom = (screenHeight - y) >= render2.size.height;
-    }
-
-    if (newDisplayOverlayBottom != displayOverlayBottom) {
-      setState(() {
-        displayOverlayBottom = newDisplayOverlayBottom;
-      });
+    if (newBottom != displayOverlayBottom) {
+      setState(() => displayOverlayBottom = newBottom);
     }
   }
 
@@ -212,55 +256,35 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     }
 
     if (oldWidget.item != widget.item ||
-        oldWidget.item.length != widget.item.length) {
+        oldWidget.item.length != widget.item.length ||
+        oldWidget.isApiLoading != widget.isApiLoading ||
+        oldWidget.canShowButton != widget.canShowButton) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() {});
+        if (mounted) {
+          setState(() {});
+          checkRenderObjects();
+          // Re-measure item/button heights after the new frame renders
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _measureField();
+            _updateCachedHeights();
+          });
+        }
       });
-    }
-  }
-
-  /// Calculate the overlay height that fits on screen (never negative).
-  double customSize() {
-    final RenderBox? renderBox =
-        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return widget.overlayHeight ?? 150;
-    final offset = renderBox.localToGlobal(Offset.zero);
-    final screenHeight = MediaQuery.of(context).size.height;
-    final keyboardOffset = widget.readOnly ? 0.0 : screenHeight * 0.4;
-
-    if (!displayOverlayBottom) {
-      final available = offset.dy - 50 - keyboardOffset;
-      final max = widget.overlayHeight ?? 0;
-      return available > max ? max : available.clamp(0, double.infinity);
-    } else {
-      final available = screenHeight - offset.dy - 50 - keyboardOffset;
-      final max = widget.overlayHeight ?? 0;
-      return available > max ? max : available.clamp(0, double.infinity);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final RenderBox? renderBox =
+    final RenderBox? fieldRb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return const SizedBox.shrink();
+    if (fieldRb == null) return const SizedBox.shrink();
 
-    // Compute a safe max height for the dropdown card.
-    // customSize() uses the field's screen position to decide how much room is
-    // available above or below the text field.
-    final double rawSize = customSize();
-    final double maxH = rawSize > 0 ? rawSize : (widget.overlayHeight ?? 150);
+    final double h = calculateHeight();
+    final double w = widget.renderBox?.size.width ?? fieldRb.size.width;
 
-    // SizedBox.expand fills the full overlay area for correct hit-testing —
-    // the dropdown's visual position (via CompositedTransformFollower) is
-    // always inside this layout bounds, so scroll/click events reach the
-    // inner ListView instead of the background.
-    //
-    // IMPORTANT: SizedBox.expand passes TIGHT constraints to its child.
-    // UnconstrainedBox breaks that chain so ConstrainedBox(maxHeight) and
-    // the inner SizedBox(height: calculateHeight()) work as intended.
-    // Without this, the card would expand to full-screen height and
-    // SizeTransition would show items starting from the very bottom.
+    // SizedBox.expand fills the overlay area for hit-testing.
+    // UnconstrainedBox lets the sized children use their explicit dimensions
+    // instead of being forced to fill the overlay.
     return SizedBox.expand(
       child: UnconstrainedBox(
         alignment: Alignment.topLeft,
@@ -270,39 +294,34 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
           offset: setOffset(),
           followerAnchor:
               displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: maxH),
-            child: LayoutBuilder(builder: (context, c) {
-              return SizedBox(
-                height: calculateHeight() + 4,
-                width: widget.renderBox?.size.width ?? c.maxWidth,
-                child: Card(
-                  elevation: widget.elevation,
-                  color: Colors.transparent,
-                  margin: EdgeInsets.zero,
+          child: SizedBox(
+            height: h,
+            width: w,
+            child: Card(
+              elevation: widget.elevation,
+              color: Colors.transparent,
+              margin: EdgeInsets.zero,
+              child: Container(
+                key: key1,
+                height: h,
+                decoration: menuDecoration(),
+                child: AnimatedSection(
+                  expand: true,
+                  animationDismissed: widget.controller.hide,
+                  axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
                   child: Container(
-                    key: key1,
-                    height: calculateHeight() + 4,
-                    decoration: menuDecoration(),
-                    child: AnimatedSection(
-                      expand: true,
-                      animationDismissed: widget.controller.hide,
-                      axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
-                      child: Container(
-                        key: key2,
-                        height: calculateHeight() + 4,
-                        width: MediaQuery.sizeOf(context).width,
-                        child: widget.isApiLoading
-                            ? loaderWidget()
-                            : widget.item.isEmpty
-                                ? emptyErrorWidget()
-                                : uiListWidget(),
-                      ),
-                    ),
+                    key: key2,
+                    height: h,
+                    width: w,
+                    child: widget.isApiLoading
+                        ? loaderWidget()
+                        : widget.item.isEmpty
+                            ? emptyErrorWidget()
+                            : uiListWidget(),
                   ),
                 ),
-              );
-            }),
+              ),
+            ),
           ),
         ),
       ),
@@ -407,8 +426,17 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   }
 
   Offset setOffset() {
-    return Offset(widget.dropdownOffset?.dx ?? 0,
-        displayOverlayBottom ? widget.dropdownOffset?.dy ?? 55 : -10);
+    final double dx = widget.dropdownOffset?.dx ?? 0;
+    if (displayOverlayBottom) {
+      // Below: position the overlay starting at the field's bottom edge.
+      // Use actual _fieldHeight so no magic numbers are needed.
+      final double dy = widget.dropdownOffset?.dy ?? _fieldHeight;
+      return Offset(dx, dy);
+    } else {
+      // Above: followerAnchor=bottomLeft so overlay bottom aligns to
+      // the target's origin (field top-left). No dy offset needed.
+      return Offset(dx, 0);
+    }
   }
 
   String? selectedItemConvertor(T? listData) {
