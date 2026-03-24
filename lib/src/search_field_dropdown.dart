@@ -414,10 +414,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       if (selectedItem == null) {
                         textController.clear();
                       } else {
-                        textController.text =
-                            selectedItemConvertor(
-                                    listData: widget.initialItem) ??
-                                "";
+                        textController.text = selectedItemConvertor(
+                                listData: widget.initialItem) ??
+                            "";
                       }
                       setState(() {});
                       widget.controller.hide();

@@ -183,9 +183,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS)) {
       newDisplayOverlayBottom = !(y -
-              (widget.readOnly
-                  ? 0
-                  : MediaQuery.of(context).size.height * 0.4) >
+              (widget.readOnly ? 0 : MediaQuery.of(context).size.height * 0.4) >
           (widget.readOnly ? screenHeight - 150 : 50));
     } else {
       // Desktop / web: check if there is enough space below
@@ -228,8 +226,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     if (renderBox == null) return widget.overlayHeight ?? 150;
     final offset = renderBox.localToGlobal(Offset.zero);
     final screenHeight = MediaQuery.of(context).size.height;
-    final keyboardOffset =
-        widget.readOnly ? 0.0 : screenHeight * 0.4;
+    final keyboardOffset = widget.readOnly ? 0.0 : screenHeight * 0.4;
 
     if (!displayOverlayBottom) {
       final available = offset.dy - 50 - keyboardOffset;
@@ -252,8 +249,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     // customSize() uses the field's screen position to decide how much room is
     // available above or below the text field.
     final double rawSize = customSize();
-    final double maxH =
-        rawSize > 0 ? rawSize : (widget.overlayHeight ?? 150);
+    final double maxH = rawSize > 0 ? rawSize : (widget.overlayHeight ?? 150);
 
     // SizedBox.expand fills the full overlay area for correct hit-testing —
     // the dropdown's visual position (via CompositedTransformFollower) is
@@ -312,8 +308,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       ),
     );
   }
-
-
 
   Widget uiListWidget() {
     return NotificationListener<OverscrollIndicatorNotification>(

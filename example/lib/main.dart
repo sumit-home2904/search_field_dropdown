@@ -216,8 +216,9 @@ class _DropDownClassState extends State<DropDownClass> {
                           margin:
                               EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
                           decoration: BoxDecoration(
-                              color:
-                                  isSelected ? Colors.green : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.green
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(2)),
                           child: Text(
                             item.name,
@@ -270,7 +271,8 @@ class _DropDownClassState extends State<DropDownClass> {
                                     size: 20,
                                   ),
                                 ),
-                              if (selectedState != null) const SizedBox(width: 5),
+                              if (selectedState != null)
+                                const SizedBox(width: 5),
                               const Icon(
                                 Icons.arrow_drop_down_sharp,
                                 size: 20,
@@ -285,9 +287,10 @@ class _DropDownClassState extends State<DropDownClass> {
                           tempCityList = [];
                           selectedCity = null;
                           selectedState = value;
-      
+
                           tempCityList = cityList.where((element) {
-                            return "${element.stateId}" == "${selectedState?.id}";
+                            return "${element.stateId}" ==
+                                "${selectedState?.id}";
                           }).toList();
                         });
                       },
@@ -307,8 +310,9 @@ class _DropDownClassState extends State<DropDownClass> {
                           margin:
                               EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
                           decoration: BoxDecoration(
-                              color:
-                                  isSelected ? Colors.green : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.green
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(2)),
                           child: Text(
                             item.name,
@@ -361,7 +365,8 @@ class _DropDownClassState extends State<DropDownClass> {
                                     size: 20,
                                   ),
                                 ),
-                              if (selectedCity != null) const SizedBox(width: 5),
+                              if (selectedCity != null)
+                                const SizedBox(width: 5),
                               const Icon(
                                 Icons.arrow_drop_down_sharp,
                                 size: 20,
@@ -391,8 +396,9 @@ class _DropDownClassState extends State<DropDownClass> {
                           margin:
                               EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
                           decoration: BoxDecoration(
-                              color:
-                                  isSelected ? Colors.green : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.green
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(2)),
                           child: Text(
                             item.name,
@@ -413,7 +419,7 @@ class _DropDownClassState extends State<DropDownClass> {
                     ))
                   ],
                 ),
-      
+
                 // Expanded(
                 //   child: ListView.builder(
                 //     shrinkWrap: true,
@@ -431,7 +437,7 @@ class _DropDownClassState extends State<DropDownClass> {
                 //     );
                 //   },),
                 // ),
-      
+
                 Expanded(
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -519,8 +525,9 @@ class _DropDownClassState extends State<DropDownClass> {
                                 item.name,
                                 style: TextStyle(
                                     fontSize: 12,
-                                    color:
-                                        isSelected ? Colors.white : Colors.black,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black,
                                     fontWeight: FontWeight.w400),
                               ),
                             );
