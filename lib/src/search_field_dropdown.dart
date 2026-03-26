@@ -152,30 +152,29 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 }
 
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
-  T? selectedItem;
-  late List<T> items;
-  List<T> selectedItemsList = [];
+  final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
+  final ValueNotifier<List<T>> itemsNotifier = ValueNotifier<List<T>>([]);
+  final ValueNotifier<List<T>> selectedItemsNotifier = ValueNotifier<List<T>>([]);
 
-  int focusedIndex = -1;
+  final ValueNotifier<int> focusedIndexNotifier = ValueNotifier<int>(-1);
 
   void removeSelectedItem(T item) {
-    if (selectedItemsList.contains(item)) {
-      setState(() {
-        selectedItemsList.remove(item);
-        if (widget.showSelectedItemsInField) {
-          textController.text =
-              selectedItemsConvertor(listData: selectedItemsList) ?? "";
-          if (selectedItemsList.isEmpty) textController.clear();
-        } else {
-          textController.clear();
-        }
-        widget.onItemsChanged?.call(selectedItemsList);
-      });
+    if (selectedItemsNotifier.value.contains(item)) {
+      final updatedList = List<T>.from(selectedItemsNotifier.value)..remove(item);
+      selectedItemsNotifier.value = updatedList;
+      if (widget.showSelectedItemsInField) {
+        textController.text =
+            selectedItemsConvertor(listData: updatedList) ?? "";
+        if (updatedList.isEmpty) textController.clear();
+      } else {
+        textController.clear();
+      }
+      widget.onItemsChanged?.call(updatedList);
     }
   }
 
   bool isTypingDisabled = false;
-  bool isKeyboardNavigation = false;
+  final ValueNotifier<bool> isKeyboardNavigationNotifier = ValueNotifier<bool>(false);
 
   final layerLink = LayerLink();
   final GlobalKey textFieldKey = GlobalKey();
@@ -191,22 +190,20 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Guard: only call setState when focusedIndex actually changes.
   void changeFocusIndex(int index) {
-    if (focusedIndex == index) return;
-    focusedIndex = index;
-    setState(() {});
+    if (focusedIndexNotifier.value == index) return;
+    focusedIndexNotifier.value = index;
   }
 
   /// Guard: only call setState when keyboard-navigation flag actually changes.
   void changeKeyBool(bool newValue) {
-    if (isKeyboardNavigation == newValue) return;
-    isKeyboardNavigation = newValue;
-    setState(() {});
+    if (isKeyboardNavigationNotifier.value == newValue) return;
+    isKeyboardNavigationNotifier.value = newValue;
   }
 
   @override
   void initState() {
     super.initState();
-    items = [];
+    itemsNotifier.value = [];
 
     if (widget.focusNode != null) {
       widget.focusNode!.addListener(_focusNodeListener);
@@ -214,17 +211,17 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      items = widget.item;
+      itemsNotifier.value = widget.item;
       if (widget.isMultiSelect) {
-        selectedItemsList = List.from(widget.initialItems ?? []);
+        selectedItemsNotifier.value = List.from(widget.initialItems ?? []);
         if (widget.showSelectedItemsInField) {
           textController.text =
-              selectedItemsConvertor(listData: selectedItemsList) ?? "";
+              selectedItemsConvertor(listData: selectedItemsNotifier.value) ?? "";
         }
       } else {
         textController.text =
             selectedItemConvertor(listData: widget.initialItem) ?? "";
-        selectedItem = widget.initialItem;
+        selectedItemNotifier.value = widget.initialItem;
       }
     });
   }
@@ -236,17 +233,15 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           baseOffset: 0,
           extentOffset: textController.text.length,
         );
-        items = await widget.onTap!();
+        itemsNotifier.value = await widget.onTap!();
       }
       if (mounted) {
-        setState(() {
-          focusedIndex = widget.controller.isShowing ? 0 : -1;
-        });
+        focusedIndexNotifier.value = widget.controller.isShowing ? 0 : -1;
       }
     } else {
       if (mounted) {
         // Reset search results so the next open shows the full list.
-        items = widget.item;
+        itemsNotifier.value = widget.item;
         if (widget.isMultiSelect) {
           if (widget.showSelectedItemsInField) {
             textController.text =
@@ -284,7 +279,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     return null;
   }
 
-  bool isApiLoading = false;
+  final ValueNotifier<bool> isApiLoadingNotifier = ValueNotifier<bool>(false);
 
   @override
   void didUpdateWidget(covariant SearchFieldDropdown<T> oldWidget) {
@@ -293,16 +288,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     if (widget.item != oldWidget.item) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        items = widget.item;
-        setState(() {});
+        itemsNotifier.value = widget.item;
       });
     }
 
     if (widget.isApiLoading != oldWidget.isApiLoading) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        isApiLoading = widget.isApiLoading;
-        setState(() {});
+        isApiLoadingNotifier.value = widget.isApiLoading;
       });
     }
 
@@ -311,18 +304,17 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           if (widget.initialItems == null || widget.initialItems!.isEmpty) {
-            selectedItemsList.clear();
+            selectedItemsNotifier.value = [];
             textController.clear();
           } else {
-            selectedItemsList = List.from(widget.initialItems!);
+            selectedItemsNotifier.value = List.from(widget.initialItems!);
             if (widget.showSelectedItemsInField) {
               textController.text =
-                  selectedItemsConvertor(listData: selectedItemsList) ?? "";
+                  selectedItemsConvertor(listData: selectedItemsNotifier.value) ?? "";
             } else {
               textController.clear();
             }
           }
-          setState(() {});
         });
       }
     } else {
@@ -332,14 +324,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           if (widget.initialItem == null) {
-            selectedItem = null;
+            selectedItemNotifier.value = null;
             textController.clear();
           } else {
-            selectedItem = widget.initialItem;
+            selectedItemNotifier.value = widget.initialItem;
             textController.text =
                 selectedItemConvertor(listData: widget.initialItem) ?? "";
           }
-          setState(() {});
         });
       }
     }
@@ -371,8 +362,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
 
-    if (focusedIndex > lastVisibleIndex) {
-      if (focusedIndex == items.length - 1) {
+    int fIndex = focusedIndexNotifier.value;
+    if (fIndex > lastVisibleIndex) {
+      if (fIndex == itemsNotifier.value.length - 1) {
         if (scrollController.hasClients) {
           scrollController.animateTo(
             scrollController.position.maxScrollExtent,
@@ -382,58 +374,52 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         }
       } else {
         scrollController.jumpTo(
-          (focusedIndex - (maxVisibleItems - 1)) * itemHeight,
+          (fIndex - (maxVisibleItems - 1)) * itemHeight,
         );
       }
-    } else if (focusedIndex < firstVisibleIndex) {
-      if (focusedIndex >= lastVisibleIndex - (maxVisibleItems - 1)) {
+    } else if (fIndex < firstVisibleIndex) {
+      if (fIndex >= lastVisibleIndex - (maxVisibleItems - 1)) {
         return;
       }
-      scrollController.jumpTo(focusedIndex * itemHeight);
+      scrollController.jumpTo(fIndex * itemHeight);
     }
   }
 
   /// Called when the user selects a drop-down item from the list.
   onItemSelected(int index) {
     if (widget.isMultiSelect) {
-      if (items.isNotEmpty) {
-        T tappedItem = items[index];
-        if (selectedItemsList.contains(tappedItem)) {
-          selectedItemsList.remove(tappedItem);
+      if (itemsNotifier.value.isNotEmpty) {
+        T tappedItem = itemsNotifier.value[index];
+        final currentList = List<T>.from(selectedItemsNotifier.value);
+        if (currentList.contains(tappedItem)) {
+          currentList.remove(tappedItem);
         } else {
-          selectedItemsList.add(tappedItem);
+          currentList.add(tappedItem);
         }
+        selectedItemsNotifier.value = currentList;
 
         if (widget.showSelectedItemsInField) {
           textController.text =
-              selectedItemsConvertor(listData: selectedItemsList) ?? "";
-          if (selectedItemsList.isEmpty) {
+              selectedItemsConvertor(listData: currentList) ?? "";
+          if (currentList.isEmpty) {
             textController.clear();
           }
-        } else {
-          // Keep search text and results unmodified so the dropdown
-          // doesn't jump abruptly resulting in visual bouncy artifacts.
         }
-
-        widget.onItemsChanged?.call(selectedItemsList);
-        // Do not reset focusedIndex to -1 here for multi-select.
-        // This ensures hover/focus highlighting remains on the tapped item!
-        setState(() {});
+        widget.onItemsChanged?.call(currentList);
       }
     } else {
       widget.controller.hide();
-      if (items.isNotEmpty) {
-        selectedItem = items[index];
+      if (itemsNotifier.value.isNotEmpty) {
+        selectedItemNotifier.value = itemsNotifier.value[index];
         textController.text =
-            selectedItemConvertor(listData: selectedItem) ?? "$selectedItem";
-        widget.onChanged?.call(items[index]);
+            selectedItemConvertor(listData: selectedItemNotifier.value) ?? "${selectedItemNotifier.value}";
+        widget.onChanged?.call(itemsNotifier.value[index]);
 
         if (widget.initialItem == null) {
           textController.clear();
-          selectedItem = null;
+          selectedItemNotifier.value = null;
         }
-        focusedIndex = -1;
-        setState(() {});
+        focusedIndexNotifier.value = -1;
       }
     }
   }
@@ -451,38 +437,34 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       child: CallbackShortcuts(
         bindings: {
           LogicalKeySet(LogicalKeyboardKey.arrowUp): () {
-            setState(() {
-              isKeyboardNavigation = true;
-              if (focusedIndex > 0) {
-                focusedIndex--;
-              } else {
-                focusedIndex = items.length - 1;
-              }
-              scrollToFocusedItem();
-            });
+            isKeyboardNavigationNotifier.value = true;
+            if (focusedIndexNotifier.value > 0) {
+              focusedIndexNotifier.value--;
+            } else {
+              focusedIndexNotifier.value = itemsNotifier.value.length - 1;
+            }
+            scrollToFocusedItem();
           },
           LogicalKeySet(LogicalKeyboardKey.arrowDown): () {
             dropDownOpen();
-            setState(() {
-              isKeyboardNavigation = true;
-              if (focusedIndex < items.length - 1) {
-                focusedIndex++;
-                scrollToFocusedItem();
-              } else {
-                focusedIndex = 0;
-                RenderBox? renderBox = itemListKey.currentContext
-                    ?.findRenderObject() as RenderBox?;
-                if (renderBox != null && scrollController.hasClients) {
-                  scrollController.jumpTo(
-                    focusedIndex * renderBox.size.height,
-                  );
-                }
+            isKeyboardNavigationNotifier.value = true;
+            if (focusedIndexNotifier.value < itemsNotifier.value.length - 1) {
+              focusedIndexNotifier.value++;
+              scrollToFocusedItem();
+            } else {
+              focusedIndexNotifier.value = 0;
+              RenderBox? renderBox = itemListKey.currentContext
+                  ?.findRenderObject() as RenderBox?;
+              if (renderBox != null && scrollController.hasClients) {
+                scrollController.jumpTo(
+                  focusedIndexNotifier.value * renderBox.size.height,
+                );
               }
-            });
+            }
           },
           LogicalKeySet(LogicalKeyboardKey.enter): () {
-            if (focusedIndex >= 0) {
-              onItemSelected(focusedIndex);
+            if (focusedIndexNotifier.value >= 0) {
+              onItemSelected(focusedIndexNotifier.value);
             }
           },
         },
@@ -508,21 +490,21 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                         onTap: () {
                           // Reset items so that next open shows the full list,
                           // not the previously filtered search results.
-                          items = widget.item;
+                          itemsNotifier.value = widget.item;
                           if (widget.isMultiSelect) {
                             if (widget.showSelectedItemsInField) {
-                              if (selectedItemsList.isEmpty) {
+                              if (selectedItemsNotifier.value.isEmpty) {
                                 textController.clear();
                               } else {
                                 textController.text = selectedItemsConvertor(
-                                        listData: selectedItemsList) ??
+                                        listData: selectedItemsNotifier.value) ??
                                     "";
                               }
                             } else {
                               textController.clear();
                             }
                           } else {
-                            if (selectedItem == null) {
+                            if (selectedItemNotifier.value == null) {
                               textController.clear();
                             } else {
                               textController.text = selectedItemConvertor(
@@ -530,7 +512,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                                   "";
                             }
                           }
-                          setState(() {});
                           widget.controller.hide();
                         },
                         child: const SizedBox.expand(),
@@ -539,16 +520,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                     OverlayBuilder(
                       key: contentKey,
                       fieldKey: textFieldKey,
-                      item: items,
+                      itemsNotifier: itemsNotifier,
                       layerLink: layerLink,
                       isMultiSelect: widget.isMultiSelect,
-                      selectedItemsList: selectedItemsList,
+                      selectedItemsNotifier: selectedItemsNotifier,
                       readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
                       renderBox: renderBox,
                       changeKeyBool: changeKeyBool,
                       scrollController: scrollController,
-                      focusedIndex: focusedIndex,
-                      isKeyboardNavigation: isKeyboardNavigation,
+                      focusedIndexNotifier: focusedIndexNotifier,
+                      isKeyboardNavigationNotifier: isKeyboardNavigationNotifier,
                       itemListKey: itemListKey,
                       addButtonKey: addButtonKey,
                       onChanged: widget.onChanged,
@@ -559,7 +540,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       controller: widget.controller,
                       textController: textController,
                       initialItem: widget.initialItem,
-                      isApiLoading: widget.isApiLoading,
+                      isApiLoadingNotifier: isApiLoadingNotifier,
                       loaderWidget: widget.loaderWidget,
                       errorMessage: widget.errorMessage,
                       fieldReadOnly: widget.fieldReadOnly,
@@ -613,10 +594,15 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             ),
             if (widget.isMultiSelect &&
                 widget.multiSelectDisplayBuilder != null)
-              widget.multiSelectDisplayBuilder!(
-                context,
-                selectedItemsList,
-                removeSelectedItem,
+              ValueListenableBuilder<List<T>>(
+                valueListenable: selectedItemsNotifier,
+                builder: (context, selectedItems, child) {
+                  return widget.multiSelectDisplayBuilder!(
+                    context,
+                    selectedItems,
+                    removeSelectedItem,
+                  );
+                },
               ),
           ],
         ),
@@ -626,7 +612,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Drop-down on tap function.
   textFiledOnTap() async {
-    focusedIndex = 0;
+    focusedIndexNotifier.value = 0;
     textController.selection = TextSelection(
       baseOffset: 0,
       extentOffset: textController.text.length,
@@ -635,13 +621,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     if (!widget.readOnly) {
       widget.controller.show();
       if (widget.onTap != null && widget.focusNode == null) {
-        items = await widget.onTap!();
+        itemsNotifier.value = await widget.onTap!();
       } else if (widget.onTap == null) {
         // Local list mode: always reset to full list on re-open so previous
         // search results don't persist after the dropdown was dismissed.
-        items = widget.item;
+        itemsNotifier.value = widget.item;
       }
-      if (mounted) setState(() {});
     }
   }
 
@@ -660,8 +645,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       if (!mounted) return;
       onSearchCalled(value.isEmpty ? "" : value);
     });
-
-    setState(() {});
   }
 
   /// Calls onSearch if provided.
@@ -669,19 +652,26 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     if (widget.onSearch != null) {
       final result = await widget.onSearch!(value);
       if (mounted) {
-        setState(() => items = result);
+        itemsNotifier.value = result;
       }
+    } else {
+      itemsNotifier.value = widget.item.where((item) {
+        return item
+            .toString()
+            .toLowerCase()
+            .contains(value.toLowerCase().trim());
+      }).toList();
     }
   }
 
   /// Opens the dropdown when any event triggers.
   dropDownOpen() {
     if (!widget.controller.isShowing) {
-      focusedIndex = 0;
+      focusedIndexNotifier.value = 0;
       widget.controller.show();
     }
     if (textController.text.isEmpty) {
-      items = widget.item;
+      itemsNotifier.value = widget.item;
     }
   }
 }

@@ -5,18 +5,18 @@ import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/search_field_dropdown_decoration.dart';
 
 class OverlayBuilder<T> extends StatefulWidget {
-  final List<T> item;
+  final ValueNotifier<List<T>> itemsNotifier;
   final LayerLink layerLink;
   final GlobalKey itemListKey;
   final GlobalKey addButtonKey;
   final GlobalKey fieldKey;
   final ScrollController scrollController;
   final T? initialItem;
-  final int focusedIndex;
-  final bool isApiLoading;
+  final ValueNotifier<int> focusedIndexNotifier;
+  final ValueNotifier<bool> isApiLoadingNotifier;
   final Widget? addButton;
   final bool fieldReadOnly;
-  final bool isKeyboardNavigation;
+  final ValueNotifier<bool> isKeyboardNavigationNotifier;
   final Text? errorMessage;
   final bool canShowButton;
   final bool readOnly;
@@ -35,7 +35,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
   final bool isMultiSelect;
-  final List<T> selectedItemsList;
+  final ValueNotifier<List<T>> selectedItemsNotifier;
   // Loose parameters moved to SearchFieldDropdownDecoration
 
   const OverlayBuilder({
@@ -48,12 +48,12 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.loaderWidget,
     required this.itemListKey,
     required this.addButtonKey,
-    required this.isKeyboardNavigation,
-    required this.focusedIndex,
+    required this.isKeyboardNavigationNotifier,
+    required this.focusedIndexNotifier,
     required this.scrollController,
     required this.changeKeyBool,
     this.errorMessage,
-    required this.item,
+    required this.itemsNotifier,
     this.overlayHeight,
     this.dropdownOffset,
     this.errorWidgetHeight,
@@ -64,8 +64,8 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.onChanged,
     required this.controller,
     this.isMultiSelect = false,
-    this.selectedItemsList = const [],
-    this.isApiLoading = false,
+    required this.selectedItemsNotifier,
+    required this.isApiLoadingNotifier,
     this.fieldReadOnly = false,
     this.canShowButton = false,
     required this.textController,
@@ -146,24 +146,24 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   /// Calculate drop-down height based on current state.
   /// Uses cached [_itemHeight] and [_addButtonHeight] so it stays
   /// accurate across API-loading, empty, and populated states.
-  double baseOnHeightCalculate() {
+  double baseOnHeightCalculate(List<T> currentItems, bool isLoading) {
     // API loading takes priority — show loader regardless of items
-    if (widget.isApiLoading) return 150;
+    if (isLoading) return 150;
 
     final double addH = _addButtonHeight;
     final double itemH = _itemHeight > 0 ? _itemHeight : 40;
 
     if (widget.canShowButton) {
-      if (widget.item.isNotEmpty) {
+      if (currentItems.isNotEmpty) {
         // List + optional add-button at the top
-        return widget.item.length * itemH + addH + 2;
+        return currentItems.length * itemH + addH + 2;
       } else {
         // Empty state: error message + add-button
         return widget.errorWidgetHeight ?? (addH + 80);
       }
     } else {
-      if (widget.item.isNotEmpty) {
-        return widget.item.length * itemH + 2;
+      if (currentItems.isNotEmpty) {
+        return currentItems.length * itemH + 2;
       }
       // Empty state without add-button
       return widget.errorWidgetHeight ?? 80;
@@ -175,8 +175,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
   /// Final height the dropdown renders at.
   /// = min(contentHeight, userOverlayHeight ?? 250, availableScreenSpace)
-  double calculateHeight() {
-    final double content = baseOnHeightCalculate();
+  double calculateHeight(List<T> currentItems, bool isLoading) {
+    final double content = baseOnHeightCalculate(currentItems, isLoading);
     final double screen = _availableScreenHeight();
     // Cap at user's max or the 250 default
     final double userMax = widget.overlayHeight ?? _defaultMaxHeight;
@@ -251,10 +251,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       });
     }
 
-    if (oldWidget.item != widget.item ||
-        oldWidget.item.length != widget.item.length ||
-        oldWidget.isApiLoading != widget.isApiLoading ||
-        oldWidget.canShowButton != widget.canShowButton) {
+    if (oldWidget.canShowButton != widget.canShowButton) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {});
@@ -275,63 +272,75 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (fieldRb == null) return const SizedBox.shrink();
 
-    final double h = calculateHeight();
-    final double w = widget.renderBox?.size.width ?? fieldRb.size.width;
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        widget.itemsNotifier,
+        widget.focusedIndexNotifier,
+        widget.selectedItemsNotifier,
+        widget.isApiLoadingNotifier,
+      ]),
+      builder: (context, child) {
+        final currentItems = widget.itemsNotifier.value;
+        final isLoading = widget.isApiLoadingNotifier.value;
+        final fIndex = widget.focusedIndexNotifier.value;
+        final sItems = widget.selectedItemsNotifier.value;
 
-    // SizedBox.expand fills the overlay area for hit-testing.
-    // UnconstrainedBox lets the sized children use their explicit dimensions
-    // instead of being forced to fill the overlay.
-    return SizedBox.expand(
-      child: UnconstrainedBox(
-        alignment: Alignment.topLeft,
-        clipBehavior: Clip.none,
-        child: CompositedTransformFollower(
-          link: widget.layerLink,
-          offset: setOffset(),
-          followerAnchor:
-              displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
-          child: SizedBox(
-            height: h,
-            width: w,
-            child: Card(
-              elevation: widget.decoration?.elevation ?? 0.0,
-              color: Colors.transparent,
-              margin: EdgeInsets.zero,
-              child: Container(
-                key: key1,
+        final double h = calculateHeight(currentItems, isLoading);
+        final double w = widget.renderBox?.size.width ?? fieldRb.size.width;
+
+        return SizedBox.expand(
+          child: UnconstrainedBox(
+            alignment: Alignment.topLeft,
+            clipBehavior: Clip.none,
+            child: CompositedTransformFollower(
+              link: widget.layerLink,
+              offset: setOffset(),
+              followerAnchor:
+                  displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
+              child: SizedBox(
                 height: h,
-                decoration: menuDecoration(),
-                child: AnimatedSection(
-                  expand: true,
-                  animationDismissed: widget.controller.hide,
-                  axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+                width: w,
+                child: Card(
+                  elevation: widget.decoration?.elevation ?? 0.0,
+                  color: Colors.transparent,
+                  margin: EdgeInsets.zero,
                   child: Container(
-                    key: key2,
+                    key: key1,
                     height: h,
-                    width: w,
-                    child: widget.isApiLoading
-                        ? loaderWidget()
-                        : widget.item.isEmpty
-                            ? emptyErrorWidget()
-                            : uiListWidget(),
+                    decoration: menuDecoration(),
+                    child: AnimatedSection(
+                      expand: true,
+                      animationDismissed: widget.controller.hide,
+                      axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+                      child: Container(
+                        key: key2,
+                        height: h,
+                        width: w,
+                        child: isLoading
+                            ? loaderWidget(currentItems, isLoading)
+                            : currentItems.isEmpty
+                                ? emptyErrorWidget()
+                                : uiListWidget(currentItems, isLoading, fIndex, sItems),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget uiListWidget() {
+  Widget uiListWidget(List<T> currentItems, bool isLoading, int fIndex, List<T> sItems) {
     return NotificationListener<OverscrollIndicatorNotification>(
       onNotification: (notification) {
         notification.disallowIndicator();
         return true;
       },
       child: SizedBox(
-        height: calculateHeight(),
+        height: calculateHeight(currentItems, isLoading),
         child: Column(
           children: [
             if (widget.canShowButton)
@@ -366,25 +375,25 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                   addAutomaticKeepAlives: false,
                   addRepaintBoundaries: false,
                   padding: widget.decoration?.listPadding ?? EdgeInsets.zero,
-                  itemCount: widget.item.length,
+                  itemCount: currentItems.length,
                   itemBuilder: (_, index) {
-                    final bool selected = widget.focusedIndex == index;
+                    final bool selected = fIndex == index;
                     return MouseRegion(
                       onHover: (event) {
                         // Guard: only call if value actually changes
-                        if (widget.isKeyboardNavigation) {
+                        if (widget.isKeyboardNavigationNotifier.value) {
                           widget.changeKeyBool(false);
                         }
                       },
                       onEnter: (event) {
                         // Guard: only update index if not in keyboard nav mode
-                        if (!widget.isKeyboardNavigation &&
-                            widget.focusedIndex != index) {
+                        if (!widget.isKeyboardNavigationNotifier.value &&
+                            fIndex != index) {
                           widget.changeIndex(index);
                         }
                       },
                       child: InkWell(
-                        key: widget.focusedIndex == index
+                        key: fIndex == index
                             ? widget.itemListKey
                             : null,
                         onTap: () => widget.onItemSelected(index),
@@ -399,7 +408,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                     Expanded(
                                       child: widget.listItemBuilder(
                                         context,
-                                        widget.item[index],
+                                        currentItems[index],
                                         selected,
                                       ),
                                     ),
@@ -408,13 +417,13 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                         null)
                                       widget.decoration!
                                               .multiSelectCheckBuilder!(
-                                          context, isItemSelected(index))
+                                          context, isItemSelected(index, currentItems, sItems))
                                     else if (widget.isMultiSelect)
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 16),
                                         child: Icon(
-                                          isItemSelected(index)
+                                          isItemSelected(index, currentItems, sItems)
                                               ? (widget.decoration
                                                       ?.multiSelectCheckedIcon ??
                                                   Icons.check_box)
@@ -423,7 +432,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                                   Icons
                                                       .check_box_outline_blank),
                                           size: 20,
-                                          color: isItemSelected(index)
+                                          color: isItemSelected(index, currentItems, sItems)
                                               ? (widget.decoration
                                                       ?.multiSelectCheckedIconColor ??
                                                   Colors.blue)
@@ -436,7 +445,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                 )
                               : widget.listItemBuilder(
                                   context,
-                                  widget.item[index],
+                                  currentItems[index],
                                   selected,
                                 ),
                         ),
@@ -452,14 +461,14 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     );
   }
 
-  bool isItemSelected(int index) {
+  bool isItemSelected(int index, List<T> currentItems, List<T> sItems) {
     if (widget.isMultiSelect) {
-      return widget.selectedItemsList.contains(widget.item[index]);
+      return sItems.contains(currentItems[index]);
     } else {
       String? selectedValue = selectedItemConvertor(selectedItem) ?? "";
-      String? selectedIndexValue = selectedItemConvertor(widget.item[index]);
+      String? selectedIndexValue = selectedItemConvertor(currentItems[index]);
       if (selectedItem != null) {
-        return selectedItem as T == widget.item[index];
+        return selectedItem as T == currentItems[index];
       } else {
         return selectedValue == selectedIndexValue;
       }
@@ -515,10 +524,10 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     );
   }
 
-  Widget loaderWidget() {
+  Widget loaderWidget(List<T> currentItems, bool isLoading) {
     return Container(
       alignment: Alignment.center,
-      height: calculateHeight(),
+      height: calculateHeight(currentItems, isLoading),
       child: Center(
         child: widget.loaderWidget ?? const CircularProgressIndicator(),
       ),
