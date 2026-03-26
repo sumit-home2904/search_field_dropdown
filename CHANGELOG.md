@@ -1,3 +1,10 @@
+# 1.2.0
+- Added comprehensive Multi-Select dropdown support (`isMultiSelect`).
+- Introduced native inner checkbox rendering alongside `multiSelectCheckBuilder`.
+- Supported custom external chip rendering via `multiSelectDisplayBuilder` and `selectedItemsBuilder`.
+- Refactored loose decoration parameters (`textStyle`, `menuDecoration`, `fieldDecoration`, etc.) into a unified `SearchFieldDropdownDecoration` configuration model.
+- Added `focusedItemDecoration`, `unfocusedItemDecoration`, and `itemPadding` for full-width row selections natively extending beneath checkboxes.
+
 # 1.1.1
 bug fixed
 

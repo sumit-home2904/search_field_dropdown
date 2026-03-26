@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:search_field_dropdown/src/signatures.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
+import 'package:search_field_dropdown/src/search_field_dropdown_decoration.dart';
 
 class OverlayBuilder<T> extends StatefulWidget {
   final List<T> item;
@@ -19,17 +20,13 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Text? errorMessage;
   final bool canShowButton;
   final bool readOnly;
-  final TextStyle textStyle;
-  final Radius? cursorRadius;
+  final SearchFieldDropdownDecoration? decoration;
   final RenderBox? renderBox;
   final Widget? loaderWidget;
   final double? overlayHeight;
   final Offset? dropdownOffset;
-  final Color? cursorErrorColor;
-  final EdgeInsets? listPadding;
   final double? errorWidgetHeight;
-  final Function(T? value) onChanged;
-  final BoxDecoration? menuDecoration;
+  final Function(T? value)? onChanged;
   final OverlayPortalController controller;
   final ListItemBuilder<T> listItemBuilder;
   final TextEditingController textController;
@@ -37,15 +34,15 @@ class OverlayBuilder<T> extends StatefulWidget {
   final Function(int) changeIndex;
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
-  final double? elevation;
+  final bool isMultiSelect;
+  final List<T> selectedItemsList;
+  // Loose parameters moved to SearchFieldDropdownDecoration
 
   const OverlayBuilder({
     super.key,
     this.renderBox,
     this.addButton,
-    this.listPadding,
     this.initialItem,
-    this.cursorRadius,
     required this.fieldKey,
     required this.readOnly,
     this.loaderWidget,
@@ -58,23 +55,22 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.errorMessage,
     required this.item,
     this.overlayHeight,
-    this.menuDecoration,
     this.dropdownOffset,
-    this.cursorErrorColor,
     this.errorWidgetHeight,
     required this.changeIndex,
     required this.onItemSelected,
-    required this.textStyle,
+    this.decoration,
     required this.layerLink,
-    required this.onChanged,
+    this.onChanged,
     required this.controller,
+    this.isMultiSelect = false,
+    this.selectedItemsList = const [],
     this.isApiLoading = false,
     this.fieldReadOnly = false,
     this.canShowButton = false,
     required this.textController,
     required this.listItemBuilder,
     this.selectedItemBuilder,
-    this.elevation = 0,
   });
 
   @override
@@ -298,7 +294,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             height: h,
             width: w,
             child: Card(
-              elevation: widget.elevation,
+              elevation: widget.decoration?.elevation ?? 0.0,
               color: Colors.transparent,
               margin: EdgeInsets.zero,
               child: Container(
@@ -369,7 +365,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                   physics: const ClampingScrollPhysics(),
                   addAutomaticKeepAlives: false,
                   addRepaintBoundaries: false,
-                  padding: widget.listPadding ?? EdgeInsets.zero,
+                  padding: widget.decoration?.listPadding ?? EdgeInsets.zero,
                   itemCount: widget.item.length,
                   itemBuilder: (_, index) {
                     final bool selected = widget.focusedIndex == index;
@@ -392,10 +388,43 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                             ? widget.itemListKey
                             : null,
                         onTap: () => widget.onItemSelected(index),
-                        child: widget.listItemBuilder(
-                          context,
-                          widget.item[index],
-                          selected,
+                        child: Container(
+                          padding: widget.decoration?.itemPadding,
+                          decoration: selected 
+                              ? widget.decoration?.focusedItemDecoration 
+                              : widget.decoration?.unfocusedItemDecoration,
+                          child: widget.isMultiSelect
+                              ? Row(
+                                  children: [
+                                    Expanded(
+                                      child: widget.listItemBuilder(
+                                        context,
+                                        widget.item[index],
+                                        selected,
+                                      ),
+                                    ),
+                                    if (widget.decoration?.multiSelectCheckBuilder != null)
+                                      widget.decoration!.multiSelectCheckBuilder!(context, isItemSelected(index))
+                                    else if (widget.isMultiSelect)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Icon(
+                                          isItemSelected(index) 
+                                              ? (widget.decoration?.multiSelectCheckedIcon ?? Icons.check_box) 
+                                              : (widget.decoration?.multiSelectUncheckedIcon ?? Icons.check_box_outline_blank),
+                                          size: 20,
+                                          color: isItemSelected(index) 
+                                              ? (widget.decoration?.multiSelectCheckedIconColor ?? Colors.blue) 
+                                              : (widget.decoration?.multiSelectUncheckedIconColor ?? Colors.grey.shade400),
+                                        ),
+                                      ),
+                                  ],
+                                )
+                              : widget.listItemBuilder(
+                                  context,
+                                  widget.item[index],
+                                  selected,
+                                ),
                         ),
                       ),
                     );
@@ -410,17 +439,21 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   }
 
   bool isItemSelected(int index) {
-    String? selectedValue = selectedItemConvertor(selectedItem) ?? "";
-    String? selectedIndexValue = selectedItemConvertor(widget.item[index]);
-    if (selectedItem != null) {
-      return selectedItem as T == widget.item[index];
+    if (widget.isMultiSelect) {
+      return widget.selectedItemsList.contains(widget.item[index]);
     } else {
-      return selectedValue == selectedIndexValue;
+      String? selectedValue = selectedItemConvertor(selectedItem) ?? "";
+      String? selectedIndexValue = selectedItemConvertor(widget.item[index]);
+      if (selectedItem != null) {
+        return selectedItem as T == widget.item[index];
+      } else {
+        return selectedValue == selectedIndexValue;
+      }
     }
   }
 
   BoxDecoration menuDecoration() {
-    if (widget.menuDecoration != null) return widget.menuDecoration!;
+    if (widget.decoration?.menuDecoration != null) return widget.decoration!.menuDecoration!;
     return BoxDecoration(
         color: Colors.grey, borderRadius: BorderRadius.circular(5));
   }

@@ -8,10 +8,9 @@ API call. It includes various customization options and supports keyboard naviga
 ## Features
 
 - Display static items or fetch them dynamically via APIs.
-- Fully customizable dropdown appearance using BoxDecoration and custom item builders.
-- Support for readonly and searchable dropdowns, along with additional customization options.
-- Easy integration with TextFormField for validation and decoration.
-- Advanced cursor styling for an enhanced user interface.
+- Support for Single-Select and Multi-Select dropdowns with native checkboxes & external display chip builders.
+- Fully customizable dropdown appearance using `SearchFieldDropdownDecoration` and custom item builders.
+- Support for readonly and searchable dropdowns, along with additional styling customization options.
 - Seamless integration of an add-button for custom functionality.
 - Flexible search and filter options, supporting both local and API-based data.
 
@@ -115,18 +114,15 @@ class DropDownClass extends StatelessWidget {
                 ),
               ),
             ),
-            textStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400
+            decoration: SearchFieldDropdownDecoration(
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+              menuDecoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.blueAccent)
+              ),
+              fieldDecoration: const InputDecoration(),
             ),
-            menuDecoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                    color: Colors.blueAccent
-                )
-            ),
-            filedDecoration: const InputDecoration(),
             onChanged: (String? value) {},
             listItemBuilder: (context, item, isSelected) {
               return Text(
@@ -201,11 +197,10 @@ class DropDownClass extends StatelessWidget {
               // example API, or return your API list.
               return itemList;
             },
-            textStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w400
+            decoration: SearchFieldDropdownDecoration(
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                fieldDecoration: const InputDecoration(),
             ),
-            filedDecoration: InputDecoration(),
             onChanged: (String? value) {},
             onSearch: (value) async {
               // We can call your API and search from it. Also, I can implement local search in your static list.
@@ -231,45 +226,84 @@ class DropDownClass extends StatelessWidget {
 }
 ```
 
+### **5. Multi-Select SearchFieldDropdown**
+
+Advanced usage example featuring multi-select configurations, custom selection parsing, and outer UI chips display integration.
+
+```dart
+SearchFieldDropdown<String>(
+  isMultiSelect: true,
+  initialItems: [],
+  item: ['Apple', 'Banana', 'Orange', 'Mango'],
+  controller: itemController,
+  decoration: SearchFieldDropdownDecoration(
+      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+      fieldDecoration: const InputDecoration(hintText: "Select multiple fruits"),
+  ),
+  onItemsChanged: (List<String> values) {
+    print("Multi selections: $values");
+  },
+  listItemBuilder: (context, item, isSelected) {
+    return Padding(
+      padding: const EdgeInsets.all(5.0),
+      child: Text(item, style: const TextStyle(fontSize: 12)),
+    );
+  },
+  selectedItemsBuilder: (context, items) { // Customise string output shown in the field
+    return items.join(', ');
+  },
+  showSelectedItemsInField: false, // Prevents text populating the main field if you prefer chips below it
+  multiSelectDisplayBuilder: (context, selectedItems, onRemove) { // Chips built automatically underneath Dropdown
+    if (selectedItems.isEmpty) return const SizedBox.shrink();
+    return Wrap(
+      spacing: 8.0,
+      children: selectedItems.map((fruit) {
+        return Chip(
+          label: Text(fruit),
+          onDeleted: () => onRemove(fruit),
+        );
+      }).toList(),
+    );
+  },
+)
+```
+
 ## Properties
 
-| Property              | Type                                   | Description                                           |
-|-----------------------|----------------------------------------|-------------------------------------------------------|
-| `key`                 | `GlobalKey<SearchFieldDropdownState>()` | Use for maintain state.                    |
-| `item`                | `List<T>?`                             | List of dropdown items to display.                    |
-| `fieldReadOnly`       | `bool`                                 | Makes `TextFormField` readonly.                       |
-| `readOnly`            | `bool`                                 | Makes dropdown readonly.                              |
-| `initialItem`         | `T?`                                   | Initial value for the dropdown.                       |
-| `isApiLoading`        | `bool`                                 | Indicates if the API is loading.                      |
-| `dropdownOffset`      | `bool`                                 | Change drop-down opening offset                       |
-| `showCursor`          | `bool?`                                | Toggles the cursor visibility.                        |
-| `cursorColor`         | `Color?`                               | Changes the cursor color.                             |
-| `cursorHeight`        | `double?`                              | Sets the cursor height.                               |
-| `cursorWidth`         | `double?`                              | Sets the cursor width.                                |
-| `errorWidgetHeight`   | `double?`                              | Sets the error widget height.                         |
-| `cursorRadius`        | `Radius?`                              | Sets the cursor border radius.                        |
-| `cursorErrorColor`    | `Color?`                               | Sets the cursor error color.                          |
-| `textStyle`           | `TextStyle`                            | Styles the search or selected text.                   |
-| `loaderWidget`        | `Widget?`                              | Custom widget to show during API loading.             |
-| `focusNode`           | `FocusNode?`                           | Manages focus for searchable dropdowns.               |
-| `errorMessage`        | `Text?`                                | Custom error message when no items are found.         |
-| `overlayHeight`       | `double?`                              | Height of the dropdown overlay.                       |
-| `addButton`           | `Widget?`                              | Adds a custom button for additional functionality.    |
-| `onChanged`           | `Function(T? value)`                   | Callback triggered when an item is selected.          |
-| `menuDecoration`      | `BoxDecoration?`                       | Custom decoration for the dropdown menu.              |
-| `filedDecoration`     | `InputDecoration`                      | Decoration for the `TextFormField`.                   |
-| `onTap`               | `Future<List<T>> Function()`           | Loads items dynamically for the dropdown.             |
-| `autovalidateMode`    | `AutovalidateMode?`                    | Enables validation listener when items change.        |
-| `controller`          | `OverlayPortalController`              | Controls dropdown visibility programmatically.        |
-| `listItemBuilder`     | `ListItemBuilder<T>`                   | Custom builder for dropdown items.                    |
-| `selectedItemBuilder` | `SelectedItemBuilder<T?>?`             | Custom builder for the selected item.                 |
-| `onSearch`            | `Future<List<T>> Function(String)`     | Callback for API-based search functionality.   |
-| `listPadding`         | `EdgeInsets?`                          | Sets padding for the list view.                       |
-| `canShowButton`       | `bool`                                 | Toggles the visibility of the add button.             |
-| `textAlign`           | `TextAlign`                            | Aligns the text in the search field.                  |
-| `keyboardType`        | `TextInputType?`                       | Sets the input type for the `TextFormField`.          |
-| `maxLine`             | `int?`                                 | Limits the maximum number of text lines.              |
-| `maxLength`           | `int?`                                 | Limits the maximum number of characters.              |
-| `inputFormatters`     | `List<TextInputFormatter>?`            | Applies input formatting rules to the `TextFormField`.|
-| `validator`           | `String? Function(String?)`            | Validates the dropdown value.                         |
-| `enableInteractiveSelection`           | `bool?`             | Enables or disables text selection in TextFormField     |
+| Property | Type | Description |
+|---|---|---|
+| `key` | `GlobalKey<SearchFieldDropdownState>()` | Use for maintain state. |
+| `item` | `List<T>?` | List of dropdown items to display. |
+| `isMultiSelect` | `bool` | Enables multi-select capabilities with internal checkboxes. |
+| `initialItems` | `List<T>?` | Defines multiple initial entries for multi-select. |
+| `initialItem` | `T?` | Initial value for the single-select dropdown. |
+| `decoration` | `SearchFieldDropdownDecoration?` | Container unifying custom cursor, menu layouts, backgrounds, padding, and text field styles. |
+| `fieldReadOnly` | `bool` | Makes `TextFormField` readonly. |
+| `readOnly` | `bool` | Makes dropdown readonly. |
+| `isApiLoading` | `bool` | Indicates if the API is loading. |
+| `dropdownOffset` | `bool` | Change drop-down opening offset |
+| `showCursor` | `bool?` | Toggles the cursor visibility. |
+| `loaderWidget` | `Widget?` | Custom widget to show during API loading. |
+| `focusNode` | `FocusNode?` | Manages focus for searchable dropdowns. |
+| `errorMessage` | `Text?` | Custom error message when no items are found. |
+| `overlayHeight` | `double?` | Height of the dropdown overlay. |
+| `addButton` | `Widget?` | Adds a custom button for additional functionality. |
+| `onChanged` | `Function(T? value)` | Callback triggered when a single item is selected. |
+| `onItemsChanged` | `Function(List<T> values)` | Callback triggered when multiple items are selected. |
+| `onTap` | `Future<List<T>> Function()` | Loads items dynamically for the dropdown. |
+| `autovalidateMode` | `AutovalidateMode?` | Enables validation listener when items change. |
+| `controller` | `OverlayPortalController` | Controls dropdown visibility programmatically. |
+| `listItemBuilder` | `ListItemBuilder<T>` | Custom builder for dropdown items. |
+| `selectedItemBuilder` | `SelectedItemBuilder<T?>?` | Custom builder for the selected single item. |
+| `selectedItemsBuilder` | `SelectedItemsBuilder<T>?` | Custom text formatting for multiple selected items. |
+| `multiSelectDisplayBuilder` | `MultiSelectDisplayBuilder<T>?` | Custom UI generic display below the search field (e.g. chips). |
+| `showSelectedItemsInField` | `bool` | Determines whether the main search text field renders strings derived from selected items. |
+| `onSearch` | `Future<List<T>> Function(String)` | Callback for API-based search functionality. |
+| `canShowButton` | `bool` | Toggles the visibility of the add button. |
+| `textAlign` | `TextAlign` | Aligns the text in the search field. |
+| `keyboardType` | `TextInputType?` | Sets the input type for the `TextFormField`. |
+| `maxLine` | `int?` | Limits the maximum number of text lines. |
+| `maxLength` | `int?` | Limits the maximum number of characters. |
+| `inputFormatters` | `List<TextInputFormatter>?` | Applies input formatting rules to the `TextFormField`. |
+| `validator` | `String? Function(String?)` | Validates the dropdown value. |
+| `enableInteractiveSelection` | `bool?` | Enables or disables text selection in TextFormField |

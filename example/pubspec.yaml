@@ -17,6 +17,7 @@ dependencies:
 
   search_field_dropdown:
     path: ../
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'overlay_builder.dart';
 import 'signatures.dart';
+import 'search_field_dropdown_decoration.dart';
 
 class SearchFieldDropdown<T> extends StatefulWidget {
   /// List of items to display in the dropdown.
@@ -31,23 +32,8 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// Call when you want to show cursor.
   final bool? showCursor;
 
-  /// Call when you need to change cursor color.
-  final Color? cursorColor;
-
-  /// Call when you need to change cursor Height.
-  final double? cursorHeight;
-
-  /// Call when you need to change cursor Width.
-  final double? cursorWidth;
-
-  /// Call when you need to change cursor Radius.
-  final Radius? cursorRadius;
-
-  /// Call when you need to change cursor Error Color.
-  final Color? cursorErrorColor;
-
-  /// Use this to style your search or selected text.
-  final TextStyle textStyle;
+  /// Set all the styling properties for rendering inside the dropdown natively.
+  final SearchFieldDropdownDecoration? decoration;
 
   /// Use this if you want to provide your custom widget when using the API.
   final Widget? loaderWidget;
@@ -65,13 +51,29 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   final Widget? addButton;
 
   /// Callback function when an item is selected.
-  final Function(T? value) onChanged;
+  final Function(T? value)? onChanged;
 
-  /// Give your drop-down a custom decoration style.
-  final BoxDecoration? menuDecoration;
+  /// Whether the dropdown allows multiple selections. default is false.
+  final bool isMultiSelect;
 
-  /// Creates a [TextFormField] with an [InputDecoration].
-  final InputDecoration filedDecoration;
+  /// Callback when multiple items are selected.
+  final Function(List<T>)? onItemsChanged;
+
+  /// Initial multiple items selected.
+  final List<T>? initialItems;
+
+  /// Build your selected multiple values UI formatted string using this property.
+  final SelectedItemsBuilder<T>? selectedItemsBuilder;
+
+  /// Customize the display of selected items below the search field in multi-select mode.
+  final MultiSelectDisplayBuilder<T>? multiSelectDisplayBuilder;
+
+  // (multiSelectCheckBuilder moved to SearchFieldDropdownDecoration)
+
+  /// Whether to display the text of selected items inside the search field. default is true.
+  final bool showSelectedItemsInField;
+
+  // (menuDecoration and fieldDecoration moved to SearchFieldDropdownDecoration)
 
   /// Call when [SearchFieldDropdown] is using the API or to load your list items.
   final Future<List<T>> Function()? onTap;
@@ -91,8 +93,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// To search for items. Can be used for API search.
   final Future<List<T>> Function(String value)? onSearch;
 
-  /// Call for [listPadding] to provide padding for the list view.
-  final EdgeInsets? listPadding;
+  // (listPadding moved to SearchFieldDropdownDecoration)
 
   /// When the value of [canShowButton] is true, the add button becomes visible.
   final bool canShowButton;
@@ -109,46 +110,42 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// We can validate your drop-down using a [validator].
   final String? Function(String? value)? validator;
 
-  final double? elevation;
-
-  const SearchFieldDropdown(
-      {super.key,
+  const SearchFieldDropdown({
+      super.key,
       this.onTap,
       this.onSearch,
       this.focusNode,
       this.addButton,
       this.validator,
       this.showCursor,
-      this.listPadding,
-      this.cursorColor,
       this.initialItem,
-      this.cursorWidth,
       this.keyboardType,
-      this.cursorRadius,
-      this.cursorHeight,
       this.loaderWidget,
       this.errorMessage,
       required this.item,
       this.overlayHeight,
-      this.menuDecoration,
       this.dropdownOffset,
       this.inputFormatters,
-      this.cursorErrorColor,
       this.readOnly = false,
       this.errorWidgetHeight,
       this.autovalidateMode,
-      required this.textStyle,
-      required this.onChanged,
+      this.onChanged,
+      this.isMultiSelect = false,
+      this.onItemsChanged,
+      this.initialItems,
+      this.selectedItemsBuilder,
+      this.multiSelectDisplayBuilder,
+      this.showSelectedItemsInField = true,
       required this.controller,
       this.selectedItemBuilder,
       this.isApiLoading = false,
       this.fieldReadOnly = false,
       this.canShowButton = false,
       required this.listItemBuilder,
-      required this.filedDecoration,
       this.enableInteractiveSelection,
       this.textAlign = TextAlign.start,
-      this.elevation = 0});
+      this.decoration,
+  });
 
   @override
   State<SearchFieldDropdown<T>> createState() => SearchFieldDropdownState<T>();
@@ -157,8 +154,24 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   T? selectedItem;
   late List<T> items;
+  List<T> selectedItemsList = [];
 
   int focusedIndex = -1;
+
+  void removeSelectedItem(T item) {
+    if (selectedItemsList.contains(item)) {
+      setState(() {
+        selectedItemsList.remove(item);
+        if (widget.showSelectedItemsInField) {
+          textController.text = selectedItemsConvertor(listData: selectedItemsList) ?? "";
+          if (selectedItemsList.isEmpty) textController.clear();
+        } else {
+          textController.clear();
+        }
+        widget.onItemsChanged?.call(selectedItemsList);
+      });
+    }
+  }
 
   bool isTypingDisabled = false;
   bool isKeyboardNavigation = false;
@@ -201,9 +214,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       items = widget.item;
-      textController.text =
-          selectedItemConvertor(listData: widget.initialItem) ?? "";
-      selectedItem = widget.initialItem;
+      if (widget.isMultiSelect) {
+        selectedItemsList = List.from(widget.initialItems ?? []);
+        if (widget.showSelectedItemsInField) {
+          textController.text = selectedItemsConvertor(listData: selectedItemsList) ?? "";
+        }
+      } else {
+        textController.text =
+            selectedItemConvertor(listData: widget.initialItem) ?? "";
+        selectedItem = widget.initialItem;
+      }
     });
   }
 
@@ -225,8 +245,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       if (mounted) {
         // Reset search results so the next open shows the full list.
         items = widget.item;
-        textController.text =
-            selectedItemConvertor(listData: widget.initialItem) ?? "";
+        if (widget.isMultiSelect) {
+          if (widget.showSelectedItemsInField) {
+            textController.text = selectedItemsConvertor(listData: widget.initialItems) ?? "";
+          } else {
+            textController.clear();
+          }
+        } else {
+          textController.text =
+              selectedItemConvertor(listData: widget.initialItem) ?? "";
+        }
       }
     }
   }
@@ -234,6 +262,21 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   String? selectedItemConvertor({T? listData}) {
     if (listData != null && widget.selectedItemBuilder != null) {
       return (widget.selectedItemBuilder!(context, listData as T)).data ?? "";
+    }
+    return null;
+  }
+
+  String? selectedItemsConvertor({List<T>? listData}) {
+    if (listData != null && listData.isNotEmpty) {
+      if (widget.selectedItemsBuilder != null) {
+        return widget.selectedItemsBuilder!(context, listData);
+      }
+      return listData.map((item) {
+        if (widget.selectedItemBuilder != null) {
+          return (widget.selectedItemBuilder!(context, item)).data ?? "";
+        }
+        return item.toString();
+      }).join(', ');
     }
     return null;
   }
@@ -260,21 +303,41 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       });
     }
 
-    // Only schedule a callback if initialItem actually changed —
-    // avoids running a postFrameCallback every didUpdateWidget.
-    if (widget.initialItem != oldWidget.initialItem) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        if (widget.initialItem == null) {
-          selectedItem = null;
-          textController.clear();
-        } else {
-          selectedItem = widget.initialItem;
-          textController.text =
-              selectedItemConvertor(listData: widget.initialItem) ?? "";
-        }
-        setState(() {});
-      });
+    if (widget.isMultiSelect) {
+      if (widget.initialItems != oldWidget.initialItems) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (widget.initialItems == null || widget.initialItems!.isEmpty) {
+            selectedItemsList.clear();
+            textController.clear();
+          } else {
+            selectedItemsList = List.from(widget.initialItems!);
+            if (widget.showSelectedItemsInField) {
+              textController.text = selectedItemsConvertor(listData: selectedItemsList) ?? "";
+            } else {
+              textController.clear();
+            }
+          }
+          setState(() {});
+        });
+      }
+    } else {
+      // Only schedule a callback if initialItem actually changed —
+      // avoids running a postFrameCallback every didUpdateWidget.
+      if (widget.initialItem != oldWidget.initialItem) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (widget.initialItem == null) {
+            selectedItem = null;
+            textController.clear();
+          } else {
+            selectedItem = widget.initialItem;
+            textController.text =
+                selectedItemConvertor(listData: widget.initialItem) ?? "";
+          }
+          setState(() {});
+        });
+      }
     }
   }
 
@@ -328,19 +391,45 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Called when the user selects a drop-down item from the list.
   onItemSelected(int index) {
-    widget.controller.hide();
-    if (items.isNotEmpty) {
-      selectedItem = items[index];
-      textController.text =
-          selectedItemConvertor(listData: selectedItem) ?? "$selectedItem";
-      widget.onChanged(items[index]);
-
-      if (widget.initialItem == null) {
-        textController.clear();
-        selectedItem = null;
+    if (widget.isMultiSelect) {
+      if (items.isNotEmpty) {
+        T tappedItem = items[index];
+        if (selectedItemsList.contains(tappedItem)) {
+          selectedItemsList.remove(tappedItem);
+        } else {
+          selectedItemsList.add(tappedItem);
+        }
+        
+        if (widget.showSelectedItemsInField) {
+          textController.text = selectedItemsConvertor(listData: selectedItemsList) ?? "";
+          if (selectedItemsList.isEmpty) {
+            textController.clear();
+          }
+        } else {
+          // Keep search text and results unmodified so the dropdown 
+          // doesn't jump abruptly resulting in visual bouncy artifacts.
+        }
+        
+        widget.onItemsChanged?.call(selectedItemsList);
+        // Do not reset focusedIndex to -1 here for multi-select. 
+        // This ensures hover/focus highlighting remains on the tapped item!
+        setState(() {});
       }
-      focusedIndex = -1;
-      setState(() {});
+    } else {
+      widget.controller.hide();
+      if (items.isNotEmpty) {
+        selectedItem = items[index];
+        textController.text =
+            selectedItemConvertor(listData: selectedItem) ?? "$selectedItem";
+        widget.onChanged?.call(items[index]);
+
+        if (widget.initialItem == null) {
+          textController.clear();
+          selectedItem = null;
+        }
+        focusedIndex = -1;
+        setState(() {});
+      }
     }
   }
 
@@ -392,9 +481,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             }
           },
         },
-        child: OverlayPortal(
-          controller: widget.controller,
-          overlayChildBuilder: (context) {
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OverlayPortal(
+              controller: widget.controller,
+              overlayChildBuilder: (context) {
             final RenderBox? renderBox =
                 textFieldKey.currentContext?.findRenderObject() as RenderBox?;
             return Stack(
@@ -411,12 +504,26 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       // Reset items so that next open shows the full list,
                       // not the previously filtered search results.
                       items = widget.item;
-                      if (selectedItem == null) {
-                        textController.clear();
+                      if (widget.isMultiSelect) {
+                        if (widget.showSelectedItemsInField) {
+                          if (selectedItemsList.isEmpty) {
+                            textController.clear();
+                          } else {
+                            textController.text = selectedItemsConvertor(
+                                    listData: selectedItemsList) ??
+                                "";
+                          }
+                        } else {
+                          textController.clear();
+                        }
                       } else {
-                        textController.text = selectedItemConvertor(
-                                listData: widget.initialItem) ??
-                            "";
+                        if (selectedItem == null) {
+                          textController.clear();
+                        } else {
+                          textController.text = selectedItemConvertor(
+                                  listData: widget.initialItem) ??
+                              "";
+                        }
                       }
                       setState(() {});
                       widget.controller.hide();
@@ -429,6 +536,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                   fieldKey: textFieldKey,
                   item: items,
                   layerLink: layerLink,
+                  isMultiSelect: widget.isMultiSelect,
+                  selectedItemsList: selectedItemsList,
                   readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
                   renderBox: renderBox,
                   changeKeyBool: changeKeyBool,
@@ -438,26 +547,21 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                   itemListKey: itemListKey,
                   addButtonKey: addButtonKey,
                   onChanged: widget.onChanged,
-                  elevation: widget.elevation,
+                  decoration: widget.decoration,
                   changeIndex: changeFocusIndex,
                   onItemSelected: onItemSelected,
-                  textStyle: widget.textStyle,
                   addButton: widget.addButton,
                   controller: widget.controller,
                   textController: textController,
                   initialItem: widget.initialItem,
-                  listPadding: widget.listPadding,
                   isApiLoading: widget.isApiLoading,
                   loaderWidget: widget.loaderWidget,
                   errorMessage: widget.errorMessage,
-                  cursorRadius: widget.cursorRadius,
                   fieldReadOnly: widget.fieldReadOnly,
                   overlayHeight: widget.overlayHeight,
                   canShowButton: widget.canShowButton,
-                  menuDecoration: widget.menuDecoration,
                   dropdownOffset: widget.dropdownOffset,
                   listItemBuilder: widget.listItemBuilder,
-                  cursorErrorColor: widget.cursorErrorColor,
                   errorWidgetHeight: widget.errorWidgetHeight,
                   selectedItemBuilder: widget.selectedItemBuilder,
                 ),
@@ -477,7 +581,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                 key: textFieldKey,
                 enableInteractiveSelection: widget.enableInteractiveSelection ??
                     (!widget.fieldReadOnly),
-                style: widget.textStyle,
+                style: widget.decoration?.textStyle ?? const TextStyle(),
                 keyboardType: widget.keyboardType,
                 inputFormatters: widget.inputFormatters,
                 textAlign: widget.textAlign,
@@ -485,12 +589,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                 focusNode: widget.focusNode,
                 controller: textController,
                 showCursor: widget.showCursor,
-                cursorHeight: widget.cursorHeight,
-                cursorWidth: widget.cursorWidth ?? 2.0,
-                cursorRadius: widget.cursorRadius,
-                decoration: widget.filedDecoration,
-                cursorColor: widget.cursorColor ?? Colors.black,
-                cursorErrorColor: widget.cursorErrorColor ?? Colors.black,
+                cursorHeight: widget.decoration?.cursorHeight,
+                cursorWidth: widget.decoration?.cursorWidth ?? 2.0,
+                cursorRadius: widget.decoration?.cursorRadius,
+                decoration: widget.decoration?.fieldDecoration ?? const InputDecoration(),
+                cursorColor: widget.decoration?.cursorColor ?? Colors.black,
+                cursorErrorColor: widget.decoration?.cursorErrorColor ?? Colors.black,
                 autovalidateMode: widget.autovalidateMode,
                 validator: widget.validator,
                 onChanged: onChange,
@@ -498,6 +602,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
               ),
             ),
           ),
+        ),
+        if (widget.isMultiSelect && widget.multiSelectDisplayBuilder != null)
+          widget.multiSelectDisplayBuilder!(
+            context,
+            selectedItemsList,
+            removeSelectedItem,
+          ),
+        ],
         ),
       ),
     );
