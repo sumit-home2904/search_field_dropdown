@@ -390,8 +390,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                         onTap: () => widget.onItemSelected(index),
                         child: Container(
                           padding: widget.decoration?.itemPadding,
-                          decoration: selected 
-                              ? widget.decoration?.focusedItemDecoration 
+                          decoration: selected
+                              ? widget.decoration?.focusedItemDecoration
                               : widget.decoration?.unfocusedItemDecoration,
                           child: widget.isMultiSelect
                               ? Row(
@@ -403,19 +403,33 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                         selected,
                                       ),
                                     ),
-                                    if (widget.decoration?.multiSelectCheckBuilder != null)
-                                      widget.decoration!.multiSelectCheckBuilder!(context, isItemSelected(index))
+                                    if (widget.decoration
+                                            ?.multiSelectCheckBuilder !=
+                                        null)
+                                      widget.decoration!
+                                              .multiSelectCheckBuilder!(
+                                          context, isItemSelected(index))
                                     else if (widget.isMultiSelect)
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
                                         child: Icon(
-                                          isItemSelected(index) 
-                                              ? (widget.decoration?.multiSelectCheckedIcon ?? Icons.check_box) 
-                                              : (widget.decoration?.multiSelectUncheckedIcon ?? Icons.check_box_outline_blank),
+                                          isItemSelected(index)
+                                              ? (widget.decoration
+                                                      ?.multiSelectCheckedIcon ??
+                                                  Icons.check_box)
+                                              : (widget.decoration
+                                                      ?.multiSelectUncheckedIcon ??
+                                                  Icons
+                                                      .check_box_outline_blank),
                                           size: 20,
-                                          color: isItemSelected(index) 
-                                              ? (widget.decoration?.multiSelectCheckedIconColor ?? Colors.blue) 
-                                              : (widget.decoration?.multiSelectUncheckedIconColor ?? Colors.grey.shade400),
+                                          color: isItemSelected(index)
+                                              ? (widget.decoration
+                                                      ?.multiSelectCheckedIconColor ??
+                                                  Colors.blue)
+                                              : (widget.decoration
+                                                      ?.multiSelectUncheckedIconColor ??
+                                                  Colors.grey.shade400),
                                         ),
                                       ),
                                   ],
@@ -453,7 +467,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   }
 
   BoxDecoration menuDecoration() {
-    if (widget.decoration?.menuDecoration != null) return widget.decoration!.menuDecoration!;
+    if (widget.decoration?.menuDecoration != null)
+      return widget.decoration!.menuDecoration!;
     return BoxDecoration(
         color: Colors.grey, borderRadius: BorderRadius.circular(5));
   }

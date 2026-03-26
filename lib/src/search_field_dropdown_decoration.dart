@@ -100,13 +100,20 @@ class SearchFieldDropdownDecoration {
       fieldDecoration: fieldDecoration ?? this.fieldDecoration,
       listPadding: listPadding ?? this.listPadding,
       elevation: elevation ?? this.elevation,
-      multiSelectCheckBuilder: multiSelectCheckBuilder ?? this.multiSelectCheckBuilder,
-      multiSelectCheckedIcon: multiSelectCheckedIcon ?? this.multiSelectCheckedIcon,
-      multiSelectUncheckedIcon: multiSelectUncheckedIcon ?? this.multiSelectUncheckedIcon,
-      multiSelectCheckedIconColor: multiSelectCheckedIconColor ?? this.multiSelectCheckedIconColor,
-      multiSelectUncheckedIconColor: multiSelectUncheckedIconColor ?? this.multiSelectUncheckedIconColor,
-      focusedItemDecoration: focusedItemDecoration ?? this.focusedItemDecoration,
-      unfocusedItemDecoration: unfocusedItemDecoration ?? this.unfocusedItemDecoration,
+      multiSelectCheckBuilder:
+          multiSelectCheckBuilder ?? this.multiSelectCheckBuilder,
+      multiSelectCheckedIcon:
+          multiSelectCheckedIcon ?? this.multiSelectCheckedIcon,
+      multiSelectUncheckedIcon:
+          multiSelectUncheckedIcon ?? this.multiSelectUncheckedIcon,
+      multiSelectCheckedIconColor:
+          multiSelectCheckedIconColor ?? this.multiSelectCheckedIconColor,
+      multiSelectUncheckedIconColor:
+          multiSelectUncheckedIconColor ?? this.multiSelectUncheckedIconColor,
+      focusedItemDecoration:
+          focusedItemDecoration ?? this.focusedItemDecoration,
+      unfocusedItemDecoration:
+          unfocusedItemDecoration ?? this.unfocusedItemDecoration,
       itemPadding: itemPadding ?? this.itemPadding,
     );
   }
