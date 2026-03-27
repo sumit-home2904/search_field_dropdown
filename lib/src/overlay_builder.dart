@@ -86,9 +86,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   final key1 = GlobalKey(), key2 = GlobalKey();
 
   // Cached measurements updated after each frame
-  final ValueNotifier<double> addButtonHeightNotifier =
-      ValueNotifier<double>(0);
-  final ValueNotifier<double> itemHeightNotifier = ValueNotifier<double>(40);
   final ValueNotifier<double> fieldHeightNotifier =
       ValueNotifier<double>(56); // actual rendered height of the trigger field
 
@@ -105,7 +102,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         selectedItemNotifier.value = widget.initialItem as T;
       }
       _measureField();
-      _updateCachedHeights();
+      // _updateCachedHeights removed
       checkRenderObjects();
     });
   }
@@ -120,71 +117,14 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     }
   }
 
-  /// Read rendered sizes and store them so height calculation is always fresh.
-  void _updateCachedHeights() {
-    if (!mounted) return;
-    double newItemH = itemHeightNotifier.value;
-    double newAddH = addButtonHeightNotifier.value;
-
-    final itemCtx = widget.itemListKey.currentContext;
-    if (itemCtx != null) {
-      final rb = itemCtx.findRenderObject() as RenderBox?;
-      if (rb != null) newItemH = rb.size.height;
-    }
-
-    final addCtx = widget.addButtonKey.currentContext;
-    if (addCtx != null) {
-      final rb = addCtx.findRenderObject() as RenderBox?;
-      if (rb != null) newAddH = rb.size.height;
-    }
-
-    if (newItemH != itemHeightNotifier.value)
-      itemHeightNotifier.value = newItemH;
-    if (newAddH != addButtonHeightNotifier.value)
-      addButtonHeightNotifier.value = newAddH;
-  }
-
-  /// Calculate drop-down height based on current state.
-  /// Uses cached [_itemHeight] and [_addButtonHeight] so it stays
-  /// accurate across API-loading, empty, and populated states.
-  double baseOnHeightCalculate(List<T> currentItems, bool isLoading) {
-    // API loading takes priority — show loader regardless of items
-    if (isLoading) return 150;
-
-    final double addH = addButtonHeightNotifier.value;
-    final double itemH =
-        itemHeightNotifier.value > 0 ? itemHeightNotifier.value : 40;
-
-    if (widget.canShowButton) {
-      if (currentItems.isNotEmpty) {
-        // List + optional add-button at the top
-        return currentItems.length * itemH + addH + 2;
-      } else {
-        // Empty state: error message + add-button
-        return widget.errorWidgetHeight ?? (addH + 80);
-      }
-    } else {
-      if (currentItems.isNotEmpty) {
-        return currentItems.length * itemH + 2;
-      }
-      // Empty state without add-button
-      return widget.errorWidgetHeight ?? 80;
-    }
-  }
-
   /// Default max height when user does not provide [overlayHeight].
   static const double _defaultMaxHeight = 250.0;
 
-  /// Final height the dropdown renders at.
-  /// = min(contentHeight, userOverlayHeight ?? 250, availableScreenSpace)
-  double calculateHeight(List<T> currentItems, bool isLoading) {
-    final double content = baseOnHeightCalculate(currentItems, isLoading);
+  double calculateMaxHeight(bool isLoading) {
+    if (isLoading) return 150;
     final double screen = _availableScreenHeight();
-    // Cap at user's max or the 250 default
     final double userMax = widget.overlayHeight ?? _defaultMaxHeight;
-    final double capped = content < userMax ? content : userMax;
-    // Never exceed physical space available on screen
-    final double result = (screen > 0 && capped > screen) ? screen : capped;
+    final double result = (screen > 0 && userMax > screen) ? screen : userMax;
     return result.clamp(0.0, double.infinity);
   }
 
@@ -258,7 +198,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
           // Re-measure item/button heights after the new frame renders
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _measureField();
-            _updateCachedHeights();
+            // _updateCachedHeights();
           });
         }
       });
@@ -269,8 +209,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   void dispose() {
     selectedItemNotifier.dispose();
     displayOverlayBottomNotifier.dispose();
-    addButtonHeightNotifier.dispose();
-    itemHeightNotifier.dispose();
     fieldHeightNotifier.dispose();
     super.dispose();
   }
@@ -289,8 +227,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         widget.isApiLoadingNotifier,
         displayOverlayBottomNotifier,
         fieldHeightNotifier,
-        itemHeightNotifier,
-        addButtonHeightNotifier,
         selectedItemNotifier,
       ]),
       builder: (context, child) {
@@ -299,45 +235,47 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         final fIndex = widget.focusedIndexNotifier.value;
         final sItems = widget.selectedItemsNotifier.value;
 
-        final double h = calculateHeight(currentItems, isLoading);
+        final double maxH = calculateMaxHeight(isLoading);
         final double w = widget.renderBox?.size.width ?? fieldRb.size.width;
 
         return SizedBox.expand(
-          child: UnconstrainedBox(
+          child: OverflowBox(
             alignment: Alignment.topLeft,
-            clipBehavior: Clip.none,
+            minWidth: 0.0,
+            maxWidth: double.infinity,
+            minHeight: 0.0,
+            maxHeight: double.infinity,
             child: CompositedTransformFollower(
               link: widget.layerLink,
               offset: setOffset(),
               followerAnchor: displayOverlayBottomNotifier.value
                   ? Alignment.topLeft
                   : Alignment.bottomLeft,
-              child: SizedBox(
-                height: h,
-                width: w,
-                child: Card(
-                  elevation: widget.decoration?.elevation ?? 0.0,
-                  color: Colors.transparent,
-                  margin: EdgeInsets.zero,
-                  child: Container(
-                    key: key1,
-                    height: h,
-                    decoration: menuDecoration(),
-                    child: AnimatedSection(
-                      expand: true,
-                      animationDismissed: widget.controller.hide,
-                      axisAlignment:
-                          displayOverlayBottomNotifier.value ? 1.0 : -1.0,
-                      child: Container(
-                        key: key2,
-                        height: h,
-                        width: w,
-                        child: isLoading
-                            ? loaderWidget(currentItems, isLoading)
-                            : currentItems.isEmpty
-                                ? emptyErrorWidget()
-                                : uiListWidget(
-                                    currentItems, isLoading, fIndex, sItems),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxH),
+                child: SizedBox(
+                  width: w,
+                  child: Card(
+                    elevation: widget.decoration?.elevation ?? 0.0,
+                    color: Colors.transparent,
+                    margin: EdgeInsets.zero,
+                    child: Container(
+                      key: key1,
+                      decoration: menuDecoration(),
+                      child: AnimatedSection(
+                        expand: true,
+                        animationDismissed: widget.controller.hide,
+                        axisAlignment:
+                            displayOverlayBottomNotifier.value ? 1.0 : -1.0,
+                        child: Container(
+                          key: key2,
+                          width: w,
+                          child: isLoading
+                              ? loaderWidget(currentItems, isLoading)
+                              : currentItems.isEmpty
+                                  ? emptyErrorWidget()
+                                  : uiListWidget(currentItems, fIndex, sItems),
+                        ),
                       ),
                     ),
                   ),
@@ -350,133 +288,128 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     );
   }
 
-  Widget uiListWidget(
-      List<T> currentItems, bool isLoading, int fIndex, List<T> sItems) {
+  Widget uiListWidget(List<T> currentItems, int fIndex, List<T> sItems) {
     return NotificationListener<OverscrollIndicatorNotification>(
       onNotification: (notification) {
         notification.disallowIndicator();
         return true;
       },
-      child: SizedBox(
-        height: calculateHeight(currentItems, isLoading),
-        child: Column(
-          children: [
-            if (widget.canShowButton)
-              if (widget.addButton != null)
-                SizedBox(
-                    key: widget.addButtonKey,
-                    child:
-                        widget.addButton ?? SizedBox(key: widget.addButtonKey)),
-            const SizedBox(height: 2),
-            Expanded(
-              child: Listener(
-                onPointerSignal: (event) {
-                  // Reuse the timer field — do NOT create a new instance here
-                  _hoverScrollTimer.run(() {
-                    if (!mounted) return;
-                    RenderBox? renderBox = widget.itemListKey.currentContext
-                        ?.findRenderObject() as RenderBox?;
-                    final double itemHeight = renderBox?.size.height ?? 30;
-                    final double firstVisibleIndex =
-                        widget.scrollController.offset / itemHeight;
-                    final int museCourse =
-                        ((event.localPosition.dy / itemHeight) - 1).ceil();
-                    final int scrollIndex =
-                        firstVisibleIndex.toInt() + museCourse;
-                    widget.changeIndex(scrollIndex);
-                  });
-                },
-                child: ListView.builder(
-                  controller: widget.scrollController,
-                  shrinkWrap: true,
-                  physics: const ClampingScrollPhysics(),
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: false,
-                  padding: widget.decoration?.listPadding ?? EdgeInsets.zero,
-                  itemCount: currentItems.length,
-                  itemBuilder: (_, index) {
-                    final bool selected = fIndex == index;
-                    return MouseRegion(
-                      onHover: (event) {
-                        // Guard: only call if value actually changes
-                        if (widget.isKeyboardNavigationNotifier.value) {
-                          widget.changeKeyBool(false);
-                        }
-                      },
-                      onEnter: (event) {
-                        // Guard: only update index if not in keyboard nav mode
-                        if (!widget.isKeyboardNavigationNotifier.value &&
-                            fIndex != index) {
-                          widget.changeIndex(index);
-                        }
-                      },
-                      child: InkWell(
-                        key: fIndex == index ? widget.itemListKey : null,
-                        onTap: () => widget.onItemSelected(index),
-                        child: Container(
-                          padding: widget.decoration?.itemPadding,
-                          decoration: selected
-                              ? widget.decoration?.focusedItemDecoration
-                              : widget.decoration?.unfocusedItemDecoration,
-                          child: widget.isMultiSelect
-                              ? Row(
-                                  children: [
-                                    Expanded(
-                                      child: widget.listItemBuilder(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.canShowButton)
+            if (widget.addButton != null)
+              SizedBox(
+                  key: widget.addButtonKey,
+                  child:
+                      widget.addButton ?? SizedBox(key: widget.addButtonKey)),
+          const SizedBox(height: 2),
+          Flexible(
+            child: Listener(
+              onPointerSignal: (event) {
+                // Reuse the timer field — do NOT create a new instance here
+                _hoverScrollTimer.run(() {
+                  if (!mounted) return;
+                  RenderBox? renderBox = widget.itemListKey.currentContext
+                      ?.findRenderObject() as RenderBox?;
+                  final double itemHeight = renderBox?.size.height ?? 30;
+                  final double firstVisibleIndex =
+                      widget.scrollController.offset / itemHeight;
+                  final int museCourse =
+                      ((event.localPosition.dy / itemHeight) - 1).ceil();
+                  final int scrollIndex =
+                      firstVisibleIndex.toInt() + museCourse;
+                  widget.changeIndex(scrollIndex);
+                });
+              },
+              child: ListView.builder(
+                controller: widget.scrollController,
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(),
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: false,
+                padding: widget.decoration?.listPadding ?? EdgeInsets.zero,
+                itemCount: currentItems.length,
+                itemBuilder: (_, index) {
+                  final bool selected = fIndex == index;
+                  return MouseRegion(
+                    onHover: (event) {
+                      // Guard: only call if value actually changes
+                      if (widget.isKeyboardNavigationNotifier.value) {
+                        widget.changeKeyBool(false);
+                      }
+                    },
+                    onEnter: (event) {
+                      // Guard: only update index if not in keyboard nav mode
+                      if (!widget.isKeyboardNavigationNotifier.value &&
+                          fIndex != index) {
+                        widget.changeIndex(index);
+                      }
+                    },
+                    child: InkWell(
+                      key: fIndex == index ? widget.itemListKey : null,
+                      onTap: () => widget.onItemSelected(index),
+                      child: Container(
+                        padding: widget.decoration?.itemPadding,
+                        decoration: selected
+                            ? widget.decoration?.focusedItemDecoration
+                            : widget.decoration?.unfocusedItemDecoration,
+                        child: widget.isMultiSelect
+                            ? Row(
+                                children: [
+                                  Expanded(
+                                    child: widget.listItemBuilder(
+                                      context,
+                                      currentItems[index],
+                                      selected,
+                                    ),
+                                  ),
+                                  if (widget.decoration
+                                          ?.multiSelectCheckBuilder !=
+                                      null)
+                                    widget.decoration!.multiSelectCheckBuilder!(
                                         context,
-                                        currentItems[index],
-                                        selected,
+                                        isItemSelected(
+                                            index, currentItems, sItems))
+                                  else if (widget.isMultiSelect)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: Icon(
+                                        isItemSelected(
+                                                index, currentItems, sItems)
+                                            ? (widget.decoration
+                                                    ?.multiSelectCheckedIcon ??
+                                                Icons.check_box)
+                                            : (widget.decoration
+                                                    ?.multiSelectUncheckedIcon ??
+                                                Icons.check_box_outline_blank),
+                                        size: 20,
+                                        color: isItemSelected(
+                                                index, currentItems, sItems)
+                                            ? (widget.decoration
+                                                    ?.multiSelectCheckedIconColor ??
+                                                Colors.blue)
+                                            : (widget.decoration
+                                                    ?.multiSelectUncheckedIconColor ??
+                                                Colors.grey.shade400),
                                       ),
                                     ),
-                                    if (widget.decoration
-                                            ?.multiSelectCheckBuilder !=
-                                        null)
-                                      widget.decoration!
-                                              .multiSelectCheckBuilder!(
-                                          context,
-                                          isItemSelected(
-                                              index, currentItems, sItems))
-                                    else if (widget.isMultiSelect)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 16),
-                                        child: Icon(
-                                          isItemSelected(
-                                                  index, currentItems, sItems)
-                                              ? (widget.decoration
-                                                      ?.multiSelectCheckedIcon ??
-                                                  Icons.check_box)
-                                              : (widget.decoration
-                                                      ?.multiSelectUncheckedIcon ??
-                                                  Icons
-                                                      .check_box_outline_blank),
-                                          size: 20,
-                                          color: isItemSelected(
-                                                  index, currentItems, sItems)
-                                              ? (widget.decoration
-                                                      ?.multiSelectCheckedIconColor ??
-                                                  Colors.blue)
-                                              : (widget.decoration
-                                                      ?.multiSelectUncheckedIconColor ??
-                                                  Colors.grey.shade400),
-                                        ),
-                                      ),
-                                  ],
-                                )
-                              : widget.listItemBuilder(
-                                  context,
-                                  currentItems[index],
-                                  selected,
-                                ),
-                        ),
+                                ],
+                              )
+                            : widget.listItemBuilder(
+                                context,
+                                currentItems[index],
+                                selected,
+                              ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -527,20 +460,24 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   Widget emptyErrorWidget() {
     return Container(
       key: errorButtonKey,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          if (widget.canShowButton)
-            if (widget.addButton != null)
-              SizedBox(
-                  key: widget.addButtonKey,
-                  child:
-                      widget.addButton ?? SizedBox(key: widget.addButtonKey)),
-          const Spacer(),
-          widget.errorMessage ?? const Text("No options"),
-          const Spacer(),
-        ],
+      child: SizedBox(
+        height: widget.errorWidgetHeight,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            if (widget.canShowButton)
+              if (widget.addButton != null)
+                SizedBox(
+                    key: widget.addButtonKey,
+                    child:
+                        widget.addButton ?? SizedBox(key: widget.addButtonKey)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: widget.errorMessage ?? const Text("No options"),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -548,7 +485,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   Widget loaderWidget(List<T> currentItems, bool isLoading) {
     return Container(
       alignment: Alignment.center,
-      height: calculateHeight(currentItems, isLoading),
+      height: 150,
       child: Center(
         child: widget.loaderWidget ?? const CircularProgressIndicator(),
       ),

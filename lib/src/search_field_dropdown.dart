@@ -9,28 +9,17 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// List of items to display in the dropdown.
   final List<T> item;
 
-  /// Use this for [TextFormField] text form fields you want to read only.
-  final bool fieldReadOnly;
-
-  /// Call when change drop-down opening offset.
-  final Offset? dropdownOffset;
   final double? errorWidgetHeight;
 
   /// When you have text fields, users can usually long-press to select text,
   /// which brings up the toolbar with options like copy, paste, etc.
   final bool? enableInteractiveSelection;
 
-  /// Use this for [SearchFieldDropdown] to make the entire dropdown read only.
-  final bool readOnly;
-
   /// The automatically generated controller an initial value.
   final T? initialItem;
 
   /// Use if you are using an API with a loading state.
   final bool isApiLoading;
-
-  /// Call when you want to show cursor.
-  final bool? showCursor;
 
   /// Set all the styling properties for rendering inside the dropdown natively.
   final SearchFieldDropdownDecoration? decoration;
@@ -41,20 +30,11 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   /// Call when we need to focus; your drop-down is searchable.
   final FocusNode? focusNode;
 
-  /// [errorMessage] shows a custom message when [item] is empty.
-  final Text? errorMessage;
-
-  /// Provide drop-down tile height.
-  final double? overlayHeight;
-
   /// Call when you need to add a button or any custom functionality widget.
   final Widget? addButton;
 
   /// Callback function when an item is selected.
   final Function(T? value)? onChanged;
-
-  /// Whether the dropdown allows multiple selections. default is false.
-  final bool isMultiSelect;
 
   /// Callback when multiple items are selected.
   final Function(List<T>)? onItemsChanged;
@@ -69,9 +49,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   final MultiSelectDisplayBuilder<T>? multiSelectDisplayBuilder;
 
   // (multiSelectCheckBuilder moved to SearchFieldDropdownDecoration)
-
-  /// Whether to display the text of selected items inside the search field. default is true.
-  final bool showSelectedItemsInField;
 
   // (menuDecoration and fieldDecoration moved to SearchFieldDropdownDecoration)
 
@@ -95,15 +72,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 
   // (listPadding moved to SearchFieldDropdownDecoration)
 
-  /// When the value of [canShowButton] is true, the add button becomes visible.
-  final bool canShowButton;
-
-  /// Call when you need to change the search field textAlign.
-  final TextAlign textAlign;
-
-  /// Call when [keyboardType] you need to obtain a specific type of input.
-  final TextInputType? keyboardType;
-
   /// Input formatters for the internal text field.
   final List<TextInputFormatter>? inputFormatters;
 
@@ -117,33 +85,22 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     this.focusNode,
     this.addButton,
     this.validator,
-    this.showCursor,
     this.initialItem,
-    this.keyboardType,
     this.loaderWidget,
-    this.errorMessage,
     required this.item,
-    this.overlayHeight,
-    this.dropdownOffset,
     this.inputFormatters,
-    this.readOnly = false,
     this.errorWidgetHeight,
     this.autovalidateMode,
     this.onChanged,
-    this.isMultiSelect = false,
     this.onItemsChanged,
     this.initialItems,
     this.selectedItemsBuilder,
     this.multiSelectDisplayBuilder,
-    this.showSelectedItemsInField = true,
     this.controller,
     this.selectedItemBuilder,
     this.isApiLoading = false,
-    this.fieldReadOnly = false,
-    this.canShowButton = false,
     required this.listItemBuilder,
     this.enableInteractiveSelection,
-    this.textAlign = TextAlign.start,
     this.decoration,
   });
 
@@ -152,6 +109,12 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 }
 
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
+  bool get _isMultiSelect => widget.decoration?.isMultiSelect ?? false;
+  bool get _showSelectedItemsInField =>
+      widget.decoration?.showSelectedItemsInField ?? true;
+  bool get _readOnly => widget.decoration?.readOnly ?? false;
+  bool get _fieldReadOnly => widget.decoration?.fieldReadOnly ?? false;
+
   final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
   final ValueNotifier<List<T>> itemsNotifier = ValueNotifier<List<T>>([]);
   final ValueNotifier<List<T>> selectedItemsNotifier =
@@ -164,7 +127,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       final updatedList = List<T>.from(selectedItemsNotifier.value)
         ..remove(item);
       selectedItemsNotifier.value = updatedList;
-      if (widget.showSelectedItemsInField) {
+      if (_showSelectedItemsInField) {
         textController.text =
             selectedItemsConvertor(listData: updatedList) ?? "";
         if (updatedList.isEmpty) textController.clear();
@@ -218,9 +181,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       itemsNotifier.value = widget.item;
-      if (widget.isMultiSelect) {
+      if (_isMultiSelect) {
         selectedItemsNotifier.value = List.from(widget.initialItems ?? []);
-        if (widget.showSelectedItemsInField) {
+        if (_showSelectedItemsInField) {
           textController.text =
               selectedItemsConvertor(listData: selectedItemsNotifier.value) ??
                   "";
@@ -249,8 +212,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       if (mounted) {
         // Reset search results so the next open shows the full list.
         itemsNotifier.value = widget.item;
-        if (widget.isMultiSelect) {
-          if (widget.showSelectedItemsInField) {
+        if (_isMultiSelect) {
+          if (_showSelectedItemsInField) {
             textController.text =
                 selectedItemsConvertor(listData: widget.initialItems) ?? "";
           } else {
@@ -306,7 +269,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       });
     }
 
-    if (widget.isMultiSelect) {
+    if (_isMultiSelect) {
       if (widget.initialItems != oldWidget.initialItems) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -315,7 +278,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             textController.clear();
           } else {
             selectedItemsNotifier.value = List.from(widget.initialItems!);
-            if (widget.showSelectedItemsInField) {
+            if (_showSelectedItemsInField) {
               textController.text = selectedItemsConvertor(
                       listData: selectedItemsNotifier.value) ??
                   "";
@@ -372,7 +335,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     final double addButtonHeight = addButtonRender?.size.height ?? 0;
 
     final int maxVisibleItems =
-        (((widget.overlayHeight ?? 150) - addButtonHeight) / itemHeight)
+        (((widget.decoration?.overlayHeight ?? 150) - addButtonHeight) /
+                itemHeight)
             .floor();
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
@@ -402,7 +366,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Called when the user selects a drop-down item from the list.
   onItemSelected(int index) {
-    if (widget.isMultiSelect) {
+    if (_isMultiSelect) {
       if (itemsNotifier.value.isNotEmpty) {
         T tappedItem = itemsNotifier.value[index];
         final currentList = List<T>.from(selectedItemsNotifier.value);
@@ -413,7 +377,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         }
         selectedItemsNotifier.value = currentList;
 
-        if (widget.showSelectedItemsInField) {
+        if (_showSelectedItemsInField) {
           textController.text =
               selectedItemsConvertor(listData: currentList) ?? "";
           if (currentList.isEmpty) {
@@ -507,8 +471,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                           // Reset items so that next open shows the full list,
                           // not the previously filtered search results.
                           itemsNotifier.value = widget.item;
-                          if (widget.isMultiSelect) {
-                            if (widget.showSelectedItemsInField) {
+                          if (_isMultiSelect) {
+                            if (_showSelectedItemsInField) {
                               if (selectedItemsNotifier.value.isEmpty) {
                                 textController.clear();
                               } else {
@@ -539,11 +503,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       fieldKey: textFieldKey,
                       itemsNotifier: itemsNotifier,
                       layerLink: layerLink,
-                      isMultiSelect: widget.isMultiSelect,
                       selectedItemsNotifier: selectedItemsNotifier,
-                      readOnly: isTypingDisabledNotifier.value
-                          ? true
-                          : widget.fieldReadOnly,
                       renderBox: renderBox,
                       changeKeyBool: changeKeyBool,
                       scrollController: scrollController,
@@ -562,14 +522,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       initialItem: widget.initialItem,
                       isApiLoadingNotifier: isApiLoadingNotifier,
                       loaderWidget: widget.loaderWidget,
-                      errorMessage: widget.errorMessage,
-                      fieldReadOnly: widget.fieldReadOnly,
-                      overlayHeight: widget.overlayHeight,
-                      canShowButton: widget.canShowButton,
-                      dropdownOffset: widget.dropdownOffset,
                       listItemBuilder: widget.listItemBuilder,
                       errorWidgetHeight: widget.errorWidgetHeight,
                       selectedItemBuilder: widget.selectedItemBuilder,
+                      readOnly: isTypingDisabledNotifier.value
+                          ? true
+                          : widget.decoration?.readOnly ?? false,
+                      fieldReadOnly: _fieldReadOnly,
                     ),
                   ],
                 );
@@ -590,17 +549,17 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                         key: textFieldKey,
                         enableInteractiveSelection:
                             widget.enableInteractiveSelection ??
-                                (!widget.fieldReadOnly),
+                                (!_fieldReadOnly),
                         style:
                             widget.decoration?.textStyle ?? const TextStyle(),
-                        keyboardType: widget.keyboardType,
+                        keyboardType: widget.decoration?.keyboardType,
                         inputFormatters: widget.inputFormatters,
-                        textAlign: widget.textAlign,
-                        readOnly:
-                            isTypingDisabled ? true : widget.fieldReadOnly,
+                        textAlign:
+                            widget.decoration?.textAlign ?? TextAlign.start,
+                        readOnly: isTypingDisabled ? true : _fieldReadOnly,
                         focusNode: widget.focusNode,
                         controller: textController,
-                        showCursor: widget.showCursor,
+                        showCursor: widget.decoration?.showCursor,
                         cursorHeight: widget.decoration?.cursorHeight,
                         cursorWidth: widget.decoration?.cursorWidth ?? 2.0,
                         cursorRadius: widget.decoration?.cursorRadius,
@@ -620,8 +579,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                 ),
               ),
             ),
-            if (widget.isMultiSelect &&
-                widget.multiSelectDisplayBuilder != null)
+            if (_isMultiSelect && widget.multiSelectDisplayBuilder != null)
               ValueListenableBuilder<List<T>>(
                 valueListenable: selectedItemsNotifier,
                 builder: (context, selectedItems, child) {
@@ -646,7 +604,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       extentOffset: textController.text.length,
     );
 
-    if (!widget.readOnly) {
+    if (!_readOnly) {
       _overlayController.show();
       if (widget.onTap != null && widget.focusNode == null) {
         itemsNotifier.value = await widget.onTap!();

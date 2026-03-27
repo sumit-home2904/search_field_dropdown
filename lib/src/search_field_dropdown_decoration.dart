@@ -48,6 +48,19 @@ class SearchFieldDropdownDecoration {
   /// Set the overall unified row padding encapsulating the list item and checkbox natively.
   final EdgeInsetsGeometry? itemPadding;
 
+  final bool? canShowButton;
+  final Offset? dropdownOffset;
+  final bool? isMultiSelect;
+  final double? overlayHeight;
+  final TextAlign? textAlign;
+  final TextInputType? keyboardType;
+  final bool? showCursor;
+  final bool? showSelectedItemsInField;
+
+  final bool? readOnly;
+  final bool? fieldReadOnly;
+  final Text? errorMessage;
+
   const SearchFieldDropdownDecoration({
     this.textStyle,
     this.cursorColor,
@@ -67,6 +80,17 @@ class SearchFieldDropdownDecoration {
     this.focusedItemDecoration,
     this.unfocusedItemDecoration,
     this.itemPadding,
+    this.canShowButton,
+    this.dropdownOffset,
+    this.isMultiSelect,
+    this.overlayHeight,
+    this.textAlign,
+    this.keyboardType,
+    this.showCursor,
+    this.showSelectedItemsInField,
+    this.readOnly,
+    this.fieldReadOnly,
+    this.errorMessage,
   });
 
   SearchFieldDropdownDecoration copyWith({
@@ -88,6 +112,17 @@ class SearchFieldDropdownDecoration {
     BoxDecoration? focusedItemDecoration,
     BoxDecoration? unfocusedItemDecoration,
     EdgeInsetsGeometry? itemPadding,
+    bool? canShowButton,
+    Offset? dropdownOffset,
+    bool? isMultiSelect,
+    double? overlayHeight,
+    TextAlign? textAlign,
+    TextInputType? keyboardType,
+    bool? showCursor,
+    bool? showSelectedItemsInField,
+    bool? readOnly,
+    bool? fieldReadOnly,
+    Text? errorMessage,
   }) {
     return SearchFieldDropdownDecoration(
       textStyle: textStyle ?? this.textStyle,
@@ -115,6 +150,18 @@ class SearchFieldDropdownDecoration {
       unfocusedItemDecoration:
           unfocusedItemDecoration ?? this.unfocusedItemDecoration,
       itemPadding: itemPadding ?? this.itemPadding,
+      canShowButton: canShowButton ?? this.canShowButton,
+      dropdownOffset: dropdownOffset ?? this.dropdownOffset,
+      isMultiSelect: isMultiSelect ?? this.isMultiSelect,
+      overlayHeight: overlayHeight ?? this.overlayHeight,
+      textAlign: textAlign ?? this.textAlign,
+      keyboardType: keyboardType ?? this.keyboardType,
+      showCursor: showCursor ?? this.showCursor,
+      showSelectedItemsInField:
+          showSelectedItemsInField ?? this.showSelectedItemsInField,
+      readOnly: readOnly ?? this.readOnly,
+      fieldReadOnly: fieldReadOnly ?? this.fieldReadOnly,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }

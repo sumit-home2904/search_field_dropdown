@@ -378,10 +378,10 @@ class _DropDownClassState extends State<DropDownClass> {
                       focusNode: focusNode3,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       controller: cityController,
-                      readOnly: tempCityList.isEmpty,
                       initialItem: selectedCity,
                       item: tempCityList,
                       decoration: SearchFieldDropdownDecoration(
+                        readOnly: tempCityList.isEmpty,
                         textStyle: const TextStyle(
                             fontSize: 12, fontWeight: FontWeight.w400),
                         menuDecoration: BoxDecoration(
@@ -470,11 +470,12 @@ class _DropDownClassState extends State<DropDownClass> {
                 ),
                 const SizedBox(height: 8),
                 SearchFieldDropdown<CityModel>(
-                  isMultiSelect: true,
                   initialItems: selectedMultiCities,
                   controller: multiCityController,
                   item: cityList,
                   decoration: SearchFieldDropdownDecoration(
+                    isMultiSelect: true,
+                    showSelectedItemsInField: false,
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),
                     menuDecoration: BoxDecoration(
@@ -529,7 +530,6 @@ class _DropDownClassState extends State<DropDownClass> {
                   selectedItemsBuilder: (context, items) {
                     return items.map((e) => e.name).join(', ');
                   },
-                  showSelectedItemsInField: false,
                   multiSelectDisplayBuilder:
                       (context, selectedItems, onRemove) {
                     if (selectedItems.isEmpty) return const SizedBox.shrink();
@@ -565,7 +565,6 @@ class _DropDownClassState extends State<DropDownClass> {
                 ),
                 const SizedBox(height: 8),
                 SearchFieldDropdown<DummyUserModel>(
-                  isMultiSelect: true,
                   initialItems: selectedApiUsers,
                   controller: userApiController,
                   isApiLoading: false,
@@ -602,6 +601,8 @@ class _DropDownClassState extends State<DropDownClass> {
                     });
                   },
                   decoration: SearchFieldDropdownDecoration(
+                    isMultiSelect: true,
+                    showSelectedItemsInField: false,
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),
                     menuDecoration: BoxDecoration(
@@ -653,7 +654,6 @@ class _DropDownClassState extends State<DropDownClass> {
                   selectedItemsBuilder: (context, items) {
                     return items.map((e) => e.name).join(', ');
                   },
-                  showSelectedItemsInField: false,
                   multiSelectDisplayBuilder:
                       (context, selectedItems, onRemove) {
                     if (selectedItems.isEmpty) return const SizedBox.shrink();
@@ -716,15 +716,14 @@ class _DropDownClassState extends State<DropDownClass> {
                               ));
                         },
                         child: SearchFieldDropdown<CountryModel>(
-                          // focusNode: focusNode,
-                          overlayHeight: 250,
                           enableInteractiveSelection: true,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           controller: countryController1[index],
                           initialItem: selectedCountry,
-                          fieldReadOnly: true,
                           item: countryList,
                           decoration: SearchFieldDropdownDecoration(
+                            fieldReadOnly: true,
+                            overlayHeight: 250,
                             textStyle: const TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w400),
                             menuDecoration: BoxDecoration(
