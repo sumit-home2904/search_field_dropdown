@@ -1,3 +1,6 @@
+# 1.2.1
+bug fixed
+
 # 1.2.0
 - Added comprehensive Multi-Select dropdown support (`isMultiSelect`).
 - Introduced native inner checkbox rendering alongside `multiSelectCheckBuilder`.

@@ -82,7 +82,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
   final AutovalidateMode? autovalidateMode;
 
   /// Use the [OverlayPortalController] to display or conceal your drop-down.
-  final OverlayPortalController controller;
+  final OverlayPortalController? controller;
 
   /// Build your drop-down listing custom UI using this property.
   final ListItemBuilder<T> listItemBuilder;
@@ -136,7 +136,7 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     this.selectedItemsBuilder,
     this.multiSelectDisplayBuilder,
     this.showSelectedItemsInField = true,
-    required this.controller,
+    this.controller,
     this.selectedItemBuilder,
     this.isApiLoading = false,
     this.fieldReadOnly = false,
@@ -154,13 +154,15 @@ class SearchFieldDropdown<T> extends StatefulWidget {
 class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
   final ValueNotifier<List<T>> itemsNotifier = ValueNotifier<List<T>>([]);
-  final ValueNotifier<List<T>> selectedItemsNotifier = ValueNotifier<List<T>>([]);
+  final ValueNotifier<List<T>> selectedItemsNotifier =
+      ValueNotifier<List<T>>([]);
 
   final ValueNotifier<int> focusedIndexNotifier = ValueNotifier<int>(-1);
 
   void removeSelectedItem(T item) {
     if (selectedItemsNotifier.value.contains(item)) {
-      final updatedList = List<T>.from(selectedItemsNotifier.value)..remove(item);
+      final updatedList = List<T>.from(selectedItemsNotifier.value)
+        ..remove(item);
       selectedItemsNotifier.value = updatedList;
       if (widget.showSelectedItemsInField) {
         textController.text =
@@ -173,8 +175,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     }
   }
 
-  bool isTypingDisabled = false;
-  final ValueNotifier<bool> isKeyboardNavigationNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> isTypingDisabledNotifier =
+      ValueNotifier<bool>(false);
+  late final OverlayPortalController _overlayController =
+      widget.controller ?? OverlayPortalController();
+  final ValueNotifier<bool> isKeyboardNavigationNotifier =
+      ValueNotifier<bool>(false);
 
   final layerLink = LayerLink();
   final GlobalKey textFieldKey = GlobalKey();
@@ -216,7 +222,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         selectedItemsNotifier.value = List.from(widget.initialItems ?? []);
         if (widget.showSelectedItemsInField) {
           textController.text =
-              selectedItemsConvertor(listData: selectedItemsNotifier.value) ?? "";
+              selectedItemsConvertor(listData: selectedItemsNotifier.value) ??
+                  "";
         }
       } else {
         textController.text =
@@ -236,7 +243,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         itemsNotifier.value = await widget.onTap!();
       }
       if (mounted) {
-        focusedIndexNotifier.value = widget.controller.isShowing ? 0 : -1;
+        focusedIndexNotifier.value = _overlayController.isShowing ? 0 : -1;
       }
     } else {
       if (mounted) {
@@ -309,8 +316,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           } else {
             selectedItemsNotifier.value = List.from(widget.initialItems!);
             if (widget.showSelectedItemsInField) {
-              textController.text =
-                  selectedItemsConvertor(listData: selectedItemsNotifier.value) ?? "";
+              textController.text = selectedItemsConvertor(
+                      listData: selectedItemsNotifier.value) ??
+                  "";
             } else {
               textController.clear();
             }
@@ -342,6 +350,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     _searchDebounce.cancel();
     textController.dispose();
     scrollController.dispose();
+    selectedItemNotifier.dispose();
+    itemsNotifier.dispose();
+    selectedItemsNotifier.dispose();
+    focusedIndexNotifier.dispose();
+    isKeyboardNavigationNotifier.dispose();
+    isApiLoadingNotifier.dispose();
+    isTypingDisabledNotifier.dispose();
     super.dispose();
   }
 
@@ -408,11 +423,12 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         widget.onItemsChanged?.call(currentList);
       }
     } else {
-      widget.controller.hide();
+      _overlayController.hide();
       if (itemsNotifier.value.isNotEmpty) {
         selectedItemNotifier.value = itemsNotifier.value[index];
         textController.text =
-            selectedItemConvertor(listData: selectedItemNotifier.value) ?? "${selectedItemNotifier.value}";
+            selectedItemConvertor(listData: selectedItemNotifier.value) ??
+                "${selectedItemNotifier.value}";
         widget.onChanged?.call(itemsNotifier.value[index]);
 
         if (widget.initialItem == null) {
@@ -430,8 +446,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (widget.controller.isShowing) {
-          widget.controller.hide();
+        if (_overlayController.isShowing) {
+          _overlayController.hide();
         }
       },
       child: CallbackShortcuts(
@@ -453,8 +469,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
               scrollToFocusedItem();
             } else {
               focusedIndexNotifier.value = 0;
-              RenderBox? renderBox = itemListKey.currentContext
-                  ?.findRenderObject() as RenderBox?;
+              RenderBox? renderBox =
+                  itemListKey.currentContext?.findRenderObject() as RenderBox?;
               if (renderBox != null && scrollController.hasClients) {
                 scrollController.jumpTo(
                   focusedIndexNotifier.value * renderBox.size.height,
@@ -473,7 +489,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           mainAxisSize: MainAxisSize.min,
           children: [
             OverlayPortal(
-              controller: widget.controller,
+              controller: _overlayController,
               overlayChildBuilder: (context) {
                 final RenderBox? renderBox = textFieldKey.currentContext
                     ?.findRenderObject() as RenderBox?;
@@ -497,7 +513,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                                 textController.clear();
                               } else {
                                 textController.text = selectedItemsConvertor(
-                                        listData: selectedItemsNotifier.value) ??
+                                        listData:
+                                            selectedItemsNotifier.value) ??
                                     "";
                               }
                             } else {
@@ -512,7 +529,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                                   "";
                             }
                           }
-                          widget.controller.hide();
+                          _overlayController.hide();
                         },
                         child: const SizedBox.expand(),
                       ),
@@ -524,12 +541,15 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       layerLink: layerLink,
                       isMultiSelect: widget.isMultiSelect,
                       selectedItemsNotifier: selectedItemsNotifier,
-                      readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
+                      readOnly: isTypingDisabledNotifier.value
+                          ? true
+                          : widget.fieldReadOnly,
                       renderBox: renderBox,
                       changeKeyBool: changeKeyBool,
                       scrollController: scrollController,
                       focusedIndexNotifier: focusedIndexNotifier,
-                      isKeyboardNavigationNotifier: isKeyboardNavigationNotifier,
+                      isKeyboardNavigationNotifier:
+                          isKeyboardNavigationNotifier,
                       itemListKey: itemListKey,
                       addButtonKey: addButtonKey,
                       onChanged: widget.onChanged,
@@ -537,7 +557,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       changeIndex: changeFocusIndex,
                       onItemSelected: onItemSelected,
                       addButton: widget.addButton,
-                      controller: widget.controller,
+                      controller: _overlayController,
                       textController: textController,
                       initialItem: widget.initialItem,
                       isApiLoadingNotifier: isApiLoadingNotifier,
@@ -559,35 +579,43 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                 child: Listener(
                   onPointerDown: (PointerDownEvent event) {
                     final newValue = event.buttons == kSecondaryMouseButton;
-                    if (isTypingDisabled != newValue) {
-                      setState(() => isTypingDisabled = newValue);
+                    if (isTypingDisabledNotifier.value != newValue) {
+                      isTypingDisabledNotifier.value = newValue;
                     }
                   },
-                  child: TextFormField(
-                    key: textFieldKey,
-                    enableInteractiveSelection:
-                        widget.enableInteractiveSelection ??
-                            (!widget.fieldReadOnly),
-                    style: widget.decoration?.textStyle ?? const TextStyle(),
-                    keyboardType: widget.keyboardType,
-                    inputFormatters: widget.inputFormatters,
-                    textAlign: widget.textAlign,
-                    readOnly: isTypingDisabled ? true : widget.fieldReadOnly,
-                    focusNode: widget.focusNode,
-                    controller: textController,
-                    showCursor: widget.showCursor,
-                    cursorHeight: widget.decoration?.cursorHeight,
-                    cursorWidth: widget.decoration?.cursorWidth ?? 2.0,
-                    cursorRadius: widget.decoration?.cursorRadius,
-                    decoration: widget.decoration?.fieldDecoration ??
-                        const InputDecoration(),
-                    cursorColor: widget.decoration?.cursorColor ?? Colors.black,
-                    cursorErrorColor:
-                        widget.decoration?.cursorErrorColor ?? Colors.black,
-                    autovalidateMode: widget.autovalidateMode,
-                    validator: widget.validator,
-                    onChanged: onChange,
-                    onTap: textFiledOnTap,
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: isTypingDisabledNotifier,
+                    builder: (context, isTypingDisabled, child) {
+                      return TextFormField(
+                        key: textFieldKey,
+                        enableInteractiveSelection:
+                            widget.enableInteractiveSelection ??
+                                (!widget.fieldReadOnly),
+                        style:
+                            widget.decoration?.textStyle ?? const TextStyle(),
+                        keyboardType: widget.keyboardType,
+                        inputFormatters: widget.inputFormatters,
+                        textAlign: widget.textAlign,
+                        readOnly:
+                            isTypingDisabled ? true : widget.fieldReadOnly,
+                        focusNode: widget.focusNode,
+                        controller: textController,
+                        showCursor: widget.showCursor,
+                        cursorHeight: widget.decoration?.cursorHeight,
+                        cursorWidth: widget.decoration?.cursorWidth ?? 2.0,
+                        cursorRadius: widget.decoration?.cursorRadius,
+                        decoration: widget.decoration?.fieldDecoration ??
+                            const InputDecoration(),
+                        cursorColor:
+                            widget.decoration?.cursorColor ?? Colors.black,
+                        cursorErrorColor:
+                            widget.decoration?.cursorErrorColor ?? Colors.black,
+                        autovalidateMode: widget.autovalidateMode,
+                        validator: widget.validator,
+                        onChanged: onChange,
+                        onTap: textFiledOnTap,
+                      );
+                    },
                   ),
                 ),
               ),
@@ -619,7 +647,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     );
 
     if (!widget.readOnly) {
-      widget.controller.show();
+      _overlayController.show();
       if (widget.onTap != null && widget.focusNode == null) {
         itemsNotifier.value = await widget.onTap!();
       } else if (widget.onTap == null) {
@@ -666,9 +694,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Opens the dropdown when any event triggers.
   dropDownOpen() {
-    if (!widget.controller.isShowing) {
+    if (!_overlayController.isShowing) {
       focusedIndexNotifier.value = 0;
-      widget.controller.show();
+      _overlayController.show();
     }
     if (textController.text.isEmpty) {
       itemsNotifier.value = widget.item;

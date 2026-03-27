@@ -78,16 +78,19 @@ class OverlayBuilder<T> extends StatefulWidget {
 }
 
 class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
-  T? selectedItem;
-  bool displayOverlayBottom = true;
+  final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
+  final ValueNotifier<bool> displayOverlayBottomNotifier =
+      ValueNotifier<bool>(true);
 
   final GlobalKey errorButtonKey = GlobalKey();
   final key1 = GlobalKey(), key2 = GlobalKey();
 
   // Cached measurements updated after each frame
-  double _addButtonHeight = 0;
-  double _itemHeight = 40;
-  double _fieldHeight = 56; // actual rendered height of the trigger field
+  final ValueNotifier<double> addButtonHeightNotifier =
+      ValueNotifier<double>(0);
+  final ValueNotifier<double> itemHeightNotifier = ValueNotifier<double>(40);
+  final ValueNotifier<double> fieldHeightNotifier =
+      ValueNotifier<double>(56); // actual rendered height of the trigger field
 
   /// Reusable timer for scroll-hover index tracking — prevents per-event allocations
   late final SearchTimerMethod _hoverScrollTimer;
@@ -99,7 +102,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.initialItem != null) {
-        selectedItem = widget.initialItem as T;
+        selectedItemNotifier.value = widget.initialItem as T;
       }
       _measureField();
       _updateCachedHeights();
@@ -113,15 +116,15 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     final fb = widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (fb != null) {
       final h = fb.size.height;
-      if (h != _fieldHeight) setState(() => _fieldHeight = h);
+      if (h != fieldHeightNotifier.value) fieldHeightNotifier.value = h;
     }
   }
 
   /// Read rendered sizes and store them so height calculation is always fresh.
   void _updateCachedHeights() {
     if (!mounted) return;
-    double newItemH = _itemHeight;
-    double newAddH = _addButtonHeight;
+    double newItemH = itemHeightNotifier.value;
+    double newAddH = addButtonHeightNotifier.value;
 
     final itemCtx = widget.itemListKey.currentContext;
     if (itemCtx != null) {
@@ -135,12 +138,10 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
       if (rb != null) newAddH = rb.size.height;
     }
 
-    if (newItemH != _itemHeight || newAddH != _addButtonHeight) {
-      setState(() {
-        _itemHeight = newItemH;
-        _addButtonHeight = newAddH;
-      });
-    }
+    if (newItemH != itemHeightNotifier.value)
+      itemHeightNotifier.value = newItemH;
+    if (newAddH != addButtonHeightNotifier.value)
+      addButtonHeightNotifier.value = newAddH;
   }
 
   /// Calculate drop-down height based on current state.
@@ -150,8 +151,9 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     // API loading takes priority — show loader regardless of items
     if (isLoading) return 150;
 
-    final double addH = _addButtonHeight;
-    final double itemH = _itemHeight > 0 ? _itemHeight : 40;
+    final double addH = addButtonHeightNotifier.value;
+    final double itemH =
+        itemHeightNotifier.value > 0 ? itemHeightNotifier.value : 40;
 
     if (widget.canShowButton) {
       if (currentItems.isNotEmpty) {
@@ -199,7 +201,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     final double usableH = mq.size.height - keyboardH;
     const double safeMargin = 8.0;
 
-    if (displayOverlayBottom) {
+    if (displayOverlayBottomNotifier.value) {
       // Space from the BOTTOM of the field to the top of keyboard/screen edge
       final double fieldBottom = offset.dy + fb.size.height;
       return (usableH - fieldBottom - safeMargin).clamp(0.0, double.infinity);
@@ -232,8 +234,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     // Open below if enough space; otherwise open above (like a native select)
     final bool newBottom = spaceBelow >= intended || spaceBelow >= spaceAbove;
 
-    if (newBottom != displayOverlayBottom) {
-      setState(() => displayOverlayBottom = newBottom);
+    if (newBottom != displayOverlayBottomNotifier.value) {
+      displayOverlayBottomNotifier.value = newBottom;
     }
   }
 
@@ -244,9 +246,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     if (widget.initialItem != oldWidget.initialItem) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {
-            selectedItem = widget.initialItem;
-          });
+          selectedItemNotifier.value = widget.initialItem;
         }
       });
     }
@@ -254,7 +254,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     if (oldWidget.canShowButton != widget.canShowButton) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() {});
           checkRenderObjects();
           // Re-measure item/button heights after the new frame renders
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -264,6 +263,16 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         }
       });
     }
+  }
+
+  @override
+  void dispose() {
+    selectedItemNotifier.dispose();
+    displayOverlayBottomNotifier.dispose();
+    addButtonHeightNotifier.dispose();
+    itemHeightNotifier.dispose();
+    fieldHeightNotifier.dispose();
+    super.dispose();
   }
 
   @override
@@ -278,6 +287,11 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         widget.focusedIndexNotifier,
         widget.selectedItemsNotifier,
         widget.isApiLoadingNotifier,
+        displayOverlayBottomNotifier,
+        fieldHeightNotifier,
+        itemHeightNotifier,
+        addButtonHeightNotifier,
+        selectedItemNotifier,
       ]),
       builder: (context, child) {
         final currentItems = widget.itemsNotifier.value;
@@ -295,8 +309,9 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             child: CompositedTransformFollower(
               link: widget.layerLink,
               offset: setOffset(),
-              followerAnchor:
-                  displayOverlayBottom ? Alignment.topLeft : Alignment.bottomLeft,
+              followerAnchor: displayOverlayBottomNotifier.value
+                  ? Alignment.topLeft
+                  : Alignment.bottomLeft,
               child: SizedBox(
                 height: h,
                 width: w,
@@ -311,7 +326,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                     child: AnimatedSection(
                       expand: true,
                       animationDismissed: widget.controller.hide,
-                      axisAlignment: displayOverlayBottom ? 1.0 : -1.0,
+                      axisAlignment:
+                          displayOverlayBottomNotifier.value ? 1.0 : -1.0,
                       child: Container(
                         key: key2,
                         height: h,
@@ -320,7 +336,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                             ? loaderWidget(currentItems, isLoading)
                             : currentItems.isEmpty
                                 ? emptyErrorWidget()
-                                : uiListWidget(currentItems, isLoading, fIndex, sItems),
+                                : uiListWidget(
+                                    currentItems, isLoading, fIndex, sItems),
                       ),
                     ),
                   ),
@@ -333,7 +350,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     );
   }
 
-  Widget uiListWidget(List<T> currentItems, bool isLoading, int fIndex, List<T> sItems) {
+  Widget uiListWidget(
+      List<T> currentItems, bool isLoading, int fIndex, List<T> sItems) {
     return NotificationListener<OverscrollIndicatorNotification>(
       onNotification: (notification) {
         notification.disallowIndicator();
@@ -393,9 +411,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                         }
                       },
                       child: InkWell(
-                        key: fIndex == index
-                            ? widget.itemListKey
-                            : null,
+                        key: fIndex == index ? widget.itemListKey : null,
                         onTap: () => widget.onItemSelected(index),
                         child: Container(
                           padding: widget.decoration?.itemPadding,
@@ -417,13 +433,16 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                         null)
                                       widget.decoration!
                                               .multiSelectCheckBuilder!(
-                                          context, isItemSelected(index, currentItems, sItems))
+                                          context,
+                                          isItemSelected(
+                                              index, currentItems, sItems))
                                     else if (widget.isMultiSelect)
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 16),
                                         child: Icon(
-                                          isItemSelected(index, currentItems, sItems)
+                                          isItemSelected(
+                                                  index, currentItems, sItems)
                                               ? (widget.decoration
                                                       ?.multiSelectCheckedIcon ??
                                                   Icons.check_box)
@@ -432,7 +451,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
                                                   Icons
                                                       .check_box_outline_blank),
                                           size: 20,
-                                          color: isItemSelected(index, currentItems, sItems)
+                                          color: isItemSelected(
+                                                  index, currentItems, sItems)
                                               ? (widget.decoration
                                                       ?.multiSelectCheckedIconColor ??
                                                   Colors.blue)
@@ -465,10 +485,11 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     if (widget.isMultiSelect) {
       return sItems.contains(currentItems[index]);
     } else {
-      String? selectedValue = selectedItemConvertor(selectedItem) ?? "";
+      String? selectedValue =
+          selectedItemConvertor(selectedItemNotifier.value) ?? "";
       String? selectedIndexValue = selectedItemConvertor(currentItems[index]);
-      if (selectedItem != null) {
-        return selectedItem as T == currentItems[index];
+      if (selectedItemNotifier.value != null) {
+        return selectedItemNotifier.value as T == currentItems[index];
       } else {
         return selectedValue == selectedIndexValue;
       }
@@ -484,10 +505,10 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
   Offset setOffset() {
     final double dx = widget.dropdownOffset?.dx ?? 0;
-    if (displayOverlayBottom) {
+    if (displayOverlayBottomNotifier.value) {
       // Below: position the overlay starting at the field's bottom edge.
-      // Use actual _fieldHeight so no magic numbers are needed.
-      final double dy = widget.dropdownOffset?.dy ?? _fieldHeight;
+      // Use actual field height so no magic numbers are needed.
+      final double dy = widget.dropdownOffset?.dy ?? fieldHeightNotifier.value;
       return Offset(dx, dy);
     } else {
       // Above: followerAnchor=bottomLeft so overlay bottom aligns to
