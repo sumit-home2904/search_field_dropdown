@@ -604,6 +604,7 @@ class _DropDownClassState extends State<DropDownClass> {
                     });
                   },
                   decoration: SearchFieldDropdownDecoration(
+                    // overlayHeight: 20,
                     isMultiSelect: true,
                     showSelectedItemsInField: false,
                     textStyle: const TextStyle(

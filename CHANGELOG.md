@@ -1,3 +1,8 @@
+# 1.2.3
+- Fixed overlay width so an open dropdown now follows text field width changes during screen or layout resize.
+- Fixed dropdown overlay dismissal on parent scroll to avoid detached floating menus in scrollable screens.
+- Fixed `overlayHeight` calculation so user-provided height values are respected while still shrinking to fit when item data is short.
+
 # 1.2.2
 bug fixed
 

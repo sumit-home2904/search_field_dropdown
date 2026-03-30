@@ -280,6 +280,8 @@ SearchFieldDropdown<String>(
 | `decoration` | `SearchFieldDropdownDecoration?` | Container unifying custom cursor, menu layouts, backgrounds, padding, and text field styles. |
 | `fieldReadOnly` | `bool` | Makes `TextFormField` readonly. |
 | `readOnly` | `bool` | Makes dropdown readonly. |
+| `parentScrollController` | `ScrollController?` | Optional parent scroll controller used to auto-dismiss the dropdown on outer scroll reliably. |
+| `closeDropdownOnParentScroll` | `bool` | Auto closes the open dropdown when its parent `ScrollView` starts scrolling. |
 | `isApiLoading` | `bool` | Indicates if the API is loading. |
 | `dropdownOffset` | `bool` | Change drop-down opening offset |
 | `showCursor` | `bool?` | Toggles the cursor visibility. |

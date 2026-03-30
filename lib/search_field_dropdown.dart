@@ -119,6 +119,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       widget.decoration?.showSelectedItemsInField ?? true;
   bool get _readOnly => widget.decoration?.readOnly ?? false;
   bool get _fieldReadOnly => widget.decoration?.fieldReadOnly ?? false;
+  bool get _closeDropdownOnParentScroll =>
+      widget.decoration?.closeDropdownOnParentScroll ?? true;
 
   final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
   final ValueNotifier<List<T>> itemsNotifier = ValueNotifier<List<T>>([]);
@@ -146,10 +148,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   final ValueNotifier<bool> isTypingDisabledNotifier =
       ValueNotifier<bool>(false);
-  late final OverlayPortalController _overlayController =
-      widget.controller ?? OverlayPortalController();
+  final OverlayPortalController _internalOverlayController =
+      OverlayPortalController();
   final ValueNotifier<bool> isKeyboardNavigationNotifier =
       ValueNotifier<bool>(false);
+
+  OverlayPortalController get _overlayController =>
+      widget.controller ?? _internalOverlayController;
 
   final layerLink = LayerLink();
   final GlobalKey textFieldKey = GlobalKey();
@@ -158,6 +163,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
+  ScrollPosition? _ancestorScrollPosition;
 
   /// Debounce timer for onSearch to avoid excessive API calls on rapid typing.
   final SearchTimerMethod _searchDebounce =
@@ -186,6 +192,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _attachAncestorScrollListener();
       itemsNotifier.value = widget.item;
       if (_isMultiSelect) {
         selectedItemsNotifier.value = List.from(widget.initialItems ?? []);
@@ -200,6 +207,84 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         selectedItemNotifier.value = widget.initialItem;
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _attachAncestorScrollListener();
+  }
+
+  ScrollPosition? _resolveAncestorScrollPosition() {
+    final explicitController = widget.decoration?.parentScrollController;
+    if (explicitController != null && explicitController.hasClients) {
+      return explicitController.position;
+    }
+
+    final primaryController = PrimaryScrollController.maybeOf(context);
+    if (primaryController != null && primaryController.hasClients) {
+      return primaryController.position;
+    }
+
+    return Scrollable.maybeOf(context)?.position;
+  }
+
+  void _attachAncestorScrollListener() {
+    final ScrollPosition? newPosition = _resolveAncestorScrollPosition();
+    if (identical(_ancestorScrollPosition, newPosition)) return;
+
+    _ancestorScrollPosition?.removeListener(_handleAncestorScrollChange);
+    _ancestorScrollPosition = newPosition;
+    _ancestorScrollPosition?.addListener(_handleAncestorScrollChange);
+  }
+
+  void _handleAncestorScrollChange() {
+    final position = _ancestorScrollPosition;
+    if (!_closeDropdownOnParentScroll ||
+        position == null ||
+        !_overlayController.isShowing) {
+      return;
+    }
+    _dismissOverlay(resetText: true);
+  }
+
+  void _restoreFieldValueAfterDismiss() {
+    itemsNotifier.value = widget.item;
+    if (_isMultiSelect) {
+      if (_showSelectedItemsInField) {
+        if (selectedItemsNotifier.value.isEmpty) {
+          textController.clear();
+        } else {
+          textController.text =
+              selectedItemsConvertor(listData: selectedItemsNotifier.value) ??
+                  "";
+        }
+      } else {
+        textController.clear();
+      }
+      return;
+    }
+
+    if (selectedItemNotifier.value == null) {
+      textController.clear();
+    } else {
+      textController.text =
+          selectedItemConvertor(listData: selectedItemNotifier.value) ??
+              "${selectedItemNotifier.value}";
+    }
+  }
+
+  void _dismissOverlay({bool resetText = false}) {
+    if (!_overlayController.isShowing) return;
+    if (resetText) {
+      _restoreFieldValueAfterDismiss();
+    }
+    _overlayController.hide();
+  }
+
+  void _showOverlay() {
+    if (_overlayController.isShowing) return;
+    _overlayController.show();
   }
 
   void _focusNodeListener() async {
@@ -316,6 +401,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   @override
   void dispose() {
     widget.focusNode?.removeListener(_focusNodeListener);
+    _ancestorScrollPosition?.removeListener(_handleAncestorScrollChange);
     _searchDebounce.cancel();
     textController.dispose();
     scrollController.dispose();
@@ -339,11 +425,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     final double itemHeight = renderBox.size.height;
     final double addButtonHeight = addButtonRender?.size.height ?? 0;
-
-    final int maxVisibleItems =
-        (((widget.decoration?.overlayHeight ?? 150) - addButtonHeight) /
-                itemHeight)
-            .floor();
+    final double configuredOverlayHeight =
+        widget.decoration?.overlayHeight ?? 150;
+    final double usableOverlayHeight =
+        (configuredOverlayHeight - addButtonHeight).clamp(
+      itemHeight,
+      double.infinity,
+    );
+    final int maxVisibleItems = (usableOverlayHeight / itemHeight).floor();
     final double firstVisibleIndex = scrollController.offset / itemHeight;
     final double lastVisibleIndex = firstVisibleIndex + (maxVisibleItems - 1);
 
@@ -394,7 +483,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         widget.onItemsChanged?.call(currentList);
       }
     } else {
-      _overlayController.hide();
+      _dismissOverlay();
       if (itemsNotifier.value.isNotEmpty) {
         selectedItemNotifier.value = itemsNotifier.value[index];
         textController.text =
@@ -418,7 +507,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (_overlayController.isShowing) {
-          _overlayController.hide();
+          _dismissOverlay();
         }
       },
       child: CallbackShortcuts(
@@ -460,10 +549,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           mainAxisSize: MainAxisSize.min,
           children: [
             OverlayPortal(
+              key: ObjectKey(_overlayController),
               controller: _overlayController,
               overlayChildBuilder: (context) {
-                final RenderBox? renderBox = textFieldKey.currentContext
-                    ?.findRenderObject() as RenderBox?;
                 return Stack(
                   children: [
                     // Dismiss barrier — translucent so keyboard shortcuts and
@@ -475,32 +563,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       child: GestureDetector(
                         behavior: HitTestBehavior.translucent,
                         onTap: () {
-                          // Reset items so that next open shows the full list,
-                          // not the previously filtered search results.
-                          itemsNotifier.value = widget.item;
-                          if (_isMultiSelect) {
-                            if (_showSelectedItemsInField) {
-                              if (selectedItemsNotifier.value.isEmpty) {
-                                textController.clear();
-                              } else {
-                                textController.text = selectedItemsConvertor(
-                                        listData:
-                                            selectedItemsNotifier.value) ??
-                                    "";
-                              }
-                            } else {
-                              textController.clear();
-                            }
-                          } else {
-                            if (selectedItemNotifier.value == null) {
-                              textController.clear();
-                            } else {
-                              textController.text = selectedItemConvertor(
-                                      listData: widget.initialItem) ??
-                                  "";
-                            }
-                          }
-                          _overlayController.hide();
+                          _dismissOverlay(resetText: true);
                         },
                         child: const SizedBox.expand(),
                       ),
@@ -511,7 +574,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       itemsNotifier: itemsNotifier,
                       layerLink: layerLink,
                       selectedItemsNotifier: selectedItemsNotifier,
-                      renderBox: renderBox,
                       changeKeyBool: changeKeyBool,
                       scrollController: scrollController,
                       focusedIndexNotifier: focusedIndexNotifier,
@@ -606,6 +668,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Drop-down on tap function.
   textFiledOnTap() async {
+    _attachAncestorScrollListener();
     focusedIndexNotifier.value = 0;
     textController.selection = TextSelection(
       baseOffset: 0,
@@ -613,7 +676,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     );
 
     if (!_readOnly) {
-      _overlayController.show();
+      _showOverlay();
       if (widget.onTap != null && widget.focusNode == null) {
         itemsNotifier.value = await widget.onTap!();
       } else if (widget.onTap == null) {
@@ -660,9 +723,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   /// Opens the dropdown when any event triggers.
   dropDownOpen() {
+    _attachAncestorScrollListener();
     if (!_overlayController.isShowing) {
       focusedIndexNotifier.value = 0;
-      _overlayController.show();
+      _showOverlay();
     }
     if (textController.text.isEmpty) {
       itemsNotifier.value = widget.item;

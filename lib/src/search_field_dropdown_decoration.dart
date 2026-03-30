@@ -59,6 +59,15 @@ class SearchFieldDropdownDecoration {
 
   final bool? readOnly;
   final bool? fieldReadOnly;
+
+  /// Supply the surrounding scroll controller when the dropdown is hosted
+  /// inside a parent ListView/SingleChildScrollView and you want scroll-aware
+  /// auto-dismiss behaviour to be deterministic.
+  final ScrollController? parentScrollController;
+
+  /// Closes the open dropdown when the surrounding parent scrollable starts
+  /// scrolling, which avoids detached overlay menus in long forms/lists.
+  final bool? closeDropdownOnParentScroll;
   final Text? errorMessage;
 
   const SearchFieldDropdownDecoration({
@@ -90,6 +99,8 @@ class SearchFieldDropdownDecoration {
     this.showSelectedItemsInField,
     this.readOnly,
     this.fieldReadOnly,
+    this.parentScrollController,
+    this.closeDropdownOnParentScroll,
     this.errorMessage,
   });
 
@@ -122,6 +133,8 @@ class SearchFieldDropdownDecoration {
     bool? showSelectedItemsInField,
     bool? readOnly,
     bool? fieldReadOnly,
+    ScrollController? parentScrollController,
+    bool? closeDropdownOnParentScroll,
     Text? errorMessage,
   }) {
     return SearchFieldDropdownDecoration(
@@ -161,6 +174,10 @@ class SearchFieldDropdownDecoration {
           showSelectedItemsInField ?? this.showSelectedItemsInField,
       readOnly: readOnly ?? this.readOnly,
       fieldReadOnly: fieldReadOnly ?? this.fieldReadOnly,
+      parentScrollController:
+          parentScrollController ?? this.parentScrollController,
+      closeDropdownOnParentScroll:
+          closeDropdownOnParentScroll ?? this.closeDropdownOnParentScroll,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }

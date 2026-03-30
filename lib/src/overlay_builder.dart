@@ -21,7 +21,6 @@ class OverlayBuilder<T> extends StatefulWidget {
   final bool canShowButton;
   final bool readOnly;
   final SearchFieldDropdownDecoration? decoration;
-  final RenderBox? renderBox;
   final Widget? loaderWidget;
   final double? overlayHeight;
   final Offset? dropdownOffset;
@@ -40,7 +39,6 @@ class OverlayBuilder<T> extends StatefulWidget {
 
   const OverlayBuilder({
     super.key,
-    this.renderBox,
     this.addButton,
     this.initialItem,
     required this.fieldKey,
@@ -77,7 +75,8 @@ class OverlayBuilder<T> extends StatefulWidget {
   State<OverlayBuilder<T>> createState() => _OverlayOutBuilderState<T>();
 }
 
-class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
+class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
+    with WidgetsBindingObserver {
   final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
   final ValueNotifier<bool> displayOverlayBottomNotifier =
       ValueNotifier<bool>(true);
@@ -88,23 +87,29 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   // Cached measurements updated after each frame
   final ValueNotifier<double> fieldHeightNotifier =
       ValueNotifier<double>(56); // actual rendered height of the trigger field
+  final ValueNotifier<double> fieldWidthNotifier = ValueNotifier<double>(0);
 
   /// Reusable timer for scroll-hover index tracking — prevents per-event allocations
   late final SearchTimerMethod _hoverScrollTimer;
+  bool _measurementScheduled = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _hoverScrollTimer = SearchTimerMethod(milliseconds: 300);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.initialItem != null) {
         selectedItemNotifier.value = widget.initialItem as T;
       }
-      _measureField();
-      // _updateCachedHeights removed
-      checkRenderObjects();
+      _syncOverlayMetrics();
     });
+  }
+
+  @override
+  void didChangeMetrics() {
+    _scheduleOverlayMeasurement();
   }
 
   /// Measure the trigger field height so offsets use the real value.
@@ -112,18 +117,43 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     if (!mounted) return;
     final fb = widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (fb != null) {
-      final h = fb.size.height;
-      if (h != fieldHeightNotifier.value) fieldHeightNotifier.value = h;
+      final size = fb.size;
+      if (size.height != fieldHeightNotifier.value) {
+        fieldHeightNotifier.value = size.height;
+      }
+      if (size.width != fieldWidthNotifier.value) {
+        fieldWidthNotifier.value = size.width;
+      }
     }
+  }
+
+  void _syncOverlayMetrics() {
+    _measureField();
+    checkRenderObjects();
+  }
+
+  void _scheduleOverlayMeasurement() {
+    if (_measurementScheduled) return;
+    _measurementScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measurementScheduled = false;
+      if (!mounted) return;
+      _syncOverlayMetrics();
+    });
   }
 
   /// Default max height when user does not provide [overlayHeight].
   static const double _defaultMaxHeight = 250.0;
 
+  double _requestedOverlayHeight(bool isLoading) {
+    return widget.overlayHeight ??
+        widget.decoration?.overlayHeight ??
+        (isLoading ? 150 : _defaultMaxHeight);
+  }
+
   double calculateMaxHeight(bool isLoading) {
-    if (isLoading) return 150;
     final double screen = _availableScreenHeight();
-    final double userMax = widget.overlayHeight ?? _defaultMaxHeight;
+    final double userMax = _requestedOverlayHeight(isLoading);
     final double result = (screen > 0 && userMax > screen) ? screen : userMax;
     return result.clamp(0.0, double.infinity);
   }
@@ -134,7 +164,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
   double _availableScreenHeight() {
     final RenderBox? fb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fb == null) return widget.overlayHeight ?? 250;
+    if (fb == null) return _requestedOverlayHeight(false);
     final offset = fb.localToGlobal(Offset.zero);
     final mq = MediaQuery.of(context);
     final double keyboardH = mq.viewInsets.bottom;
@@ -169,7 +199,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     final double spaceAbove = offset.dy;
     // Use the INTENDED max height (not the screen-capped value) so the
     // above/below decision reflects the user's desired dropdown size.
-    final double intended = widget.overlayHeight ?? _defaultMaxHeight;
+    final double intended = _requestedOverlayHeight(false);
 
     // Open below if enough space; otherwise open above (like a native select)
     final bool newBottom = spaceBelow >= intended || spaceBelow >= spaceAbove;
@@ -194,12 +224,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
     if (oldWidget.canShowButton != widget.canShowButton) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          checkRenderObjects();
-          // Re-measure item/button heights after the new frame renders
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _measureField();
-            // _updateCachedHeights();
-          });
+          _scheduleOverlayMeasurement();
         }
       });
     }
@@ -207,14 +232,17 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     selectedItemNotifier.dispose();
     displayOverlayBottomNotifier.dispose();
     fieldHeightNotifier.dispose();
+    fieldWidthNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    _scheduleOverlayMeasurement();
     final RenderBox? fieldRb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (fieldRb == null) return const SizedBox.shrink();
@@ -227,6 +255,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         widget.isApiLoadingNotifier,
         displayOverlayBottomNotifier,
         fieldHeightNotifier,
+        fieldWidthNotifier,
         selectedItemNotifier,
       ]),
       builder: (context, child) {
@@ -236,7 +265,9 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
         final sItems = widget.selectedItemsNotifier.value;
 
         final double maxH = calculateMaxHeight(isLoading);
-        final double w = widget.renderBox?.size.width ?? fieldRb.size.width;
+        final double w = fieldWidthNotifier.value > 0
+            ? fieldWidthNotifier.value
+            : fieldRb.size.width;
 
         return SizedBox.expand(
           child: OverflowBox(
@@ -247,6 +278,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>> {
             maxHeight: double.infinity,
             child: CompositedTransformFollower(
               link: widget.layerLink,
+              showWhenUnlinked: false,
               offset: setOffset(),
               followerAnchor: displayOverlayBottomNotifier.value
                   ? Alignment.topLeft
