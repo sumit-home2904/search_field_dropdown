@@ -595,6 +595,9 @@ class _DropDownClassState extends State<DropDownClass> {
                     }
                     return [];
                   },
+                  onChanged: (value) {
+                    print(value);
+                  },
                   onItemsChanged: (List<DummyUserModel> values) {
                     setState(() {
                       selectedApiUsers = values;
