@@ -4,71 +4,58 @@ import 'package:search_field_dropdown/src/signatures.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/search_field_dropdown_decoration.dart';
 
+/// Pure overlay renderer for the dropdown.
+///
+/// All selection mutations stay in `SearchFieldDropdownState`; this widget
+/// only reflects the current notifiers and forwards row taps back upward.
 class OverlayBuilder<T> extends StatefulWidget {
-  final ValueNotifier<List<T>> itemsNotifier;
-  final LayerLink layerLink;
-  final GlobalKey itemListKey;
-  final GlobalKey addButtonKey;
-  final GlobalKey fieldKey;
-  final ScrollController scrollController;
-  final T? initialItem;
-  final ValueNotifier<int> focusedIndexNotifier;
-  final ValueNotifier<bool> isApiLoadingNotifier;
   final Widget? addButton;
-  final bool fieldReadOnly;
-  final ValueNotifier<bool> isKeyboardNavigationNotifier;
-  final Text? errorMessage;
-  final bool canShowButton;
-  final bool readOnly;
-  final SearchFieldDropdownDecoration? decoration;
+  final bool isMultiSelect;
+  final GlobalKey fieldKey;
+  final LayerLink layerLink;
   final Widget? loaderWidget;
-  final double? overlayHeight;
+  final GlobalKey itemListKey;
   final Offset? dropdownOffset;
+  final GlobalKey addButtonKey;
   final double? errorWidgetHeight;
-  final Function(T? value)? onChanged;
-  final OverlayPortalController controller;
-  final ListItemBuilder<T> listItemBuilder;
-  final TextEditingController textController;
-  final SelectedItemBuilder<T>? selectedItemBuilder;
   final Function(int) changeIndex;
   final Function(int) onItemSelected;
   final Function(bool) changeKeyBool;
-  final bool isMultiSelect;
+  final ScrollController scrollController;
+  final OverlayPortalController controller;
+  final ListItemBuilder<T> listItemBuilder;
+  final TextEditingController textController;
+  final ValueNotifier<List<T>> itemsNotifier;
+  final ValueNotifier<int> focusedIndexNotifier;
+  final ValueNotifier<bool> isApiLoadingNotifier;
+  final SearchFieldDropdownDecoration? decoration;
   final ValueNotifier<List<T>> selectedItemsNotifier;
-  // Loose parameters moved to SearchFieldDropdownDecoration
+  final ValueNotifier<bool> isKeyboardNavigationNotifier;
 
   const OverlayBuilder({
     super.key,
+    this.decoration,
     this.addButton,
-    this.initialItem,
-    required this.fieldKey,
-    required this.readOnly,
     this.loaderWidget,
+    this.dropdownOffset,
+    required this.fieldKey,
+    this.errorWidgetHeight,
+    required this.layerLink,
+    required this.controller,
+    required this.changeIndex,
     required this.itemListKey,
     required this.addButtonKey,
-    required this.isKeyboardNavigationNotifier,
-    required this.focusedIndexNotifier,
-    required this.scrollController,
-    required this.changeKeyBool,
-    this.errorMessage,
-    required this.itemsNotifier,
-    this.overlayHeight,
-    this.dropdownOffset,
-    this.errorWidgetHeight,
-    required this.changeIndex,
-    required this.onItemSelected,
-    this.decoration,
-    required this.layerLink,
-    this.onChanged,
-    required this.controller,
     this.isMultiSelect = false,
-    required this.selectedItemsNotifier,
-    required this.isApiLoadingNotifier,
-    this.fieldReadOnly = false,
-    this.canShowButton = false,
+    required this.changeKeyBool,
+    required this.itemsNotifier,
     required this.textController,
+    required this.onItemSelected,
     required this.listItemBuilder,
-    this.selectedItemBuilder,
+    required this.scrollController,
+    required this.focusedIndexNotifier,
+    required this.isApiLoadingNotifier,
+    required this.selectedItemsNotifier,
+    required this.isKeyboardNavigationNotifier,
   });
 
   @override
@@ -77,7 +64,6 @@ class OverlayBuilder<T> extends StatefulWidget {
 
 class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     with WidgetsBindingObserver {
-  final ValueNotifier<T?> selectedItemNotifier = ValueNotifier<T?>(null);
   final ValueNotifier<bool> displayOverlayBottomNotifier =
       ValueNotifier<bool>(true);
 
@@ -100,9 +86,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     _hoverScrollTimer = SearchTimerMethod(milliseconds: 300);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.initialItem != null) {
-        selectedItemNotifier.value = widget.initialItem as T;
-      }
       _syncOverlayMetrics();
     });
   }
@@ -146,8 +129,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   static const double _defaultMaxHeight = 250.0;
 
   double _requestedOverlayHeight(bool isLoading) {
-    return widget.overlayHeight ??
-        widget.decoration?.overlayHeight ??
+    return widget.decoration?.overlayHeight ??
         (isLoading ? 150 : _defaultMaxHeight);
   }
 
@@ -213,15 +195,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   void didUpdateWidget(covariant OverlayBuilder<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.initialItem != oldWidget.initialItem) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          selectedItemNotifier.value = widget.initialItem;
-        }
-      });
-    }
-
-    if (oldWidget.canShowButton != widget.canShowButton) {
+    if (oldWidget.decoration?.canShowButton !=
+        widget.decoration?.canShowButton) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _scheduleOverlayMeasurement();
@@ -233,7 +208,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    selectedItemNotifier.dispose();
     displayOverlayBottomNotifier.dispose();
     fieldHeightNotifier.dispose();
     fieldWidthNotifier.dispose();
@@ -256,7 +230,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
         displayOverlayBottomNotifier,
         fieldHeightNotifier,
         fieldWidthNotifier,
-        selectedItemNotifier,
       ]),
       builder: (context, child) {
         final currentItems = widget.itemsNotifier.value;
@@ -329,7 +302,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.canShowButton)
+          if (widget.decoration?.canShowButton ?? false)
             if (widget.addButton != null)
               SizedBox(
                   key: widget.addButtonKey,
@@ -389,6 +362,9 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                         child: widget.isMultiSelect
                             ? Row(
                                 children: [
+                                  // Keep the row as the primary tap target so
+                                  // custom indicators and native icons follow
+                                  // the same selection path.
                                   Expanded(
                                     child: widget.listItemBuilder(
                                       context,
@@ -446,20 +422,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     );
   }
 
-  bool isItemSelected(int index, List<T> currentItems, List<T> sItems) {
-    if (widget.isMultiSelect) {
-      return sItems.contains(currentItems[index]);
-    } else {
-      String? selectedValue =
-          selectedItemConvertor(selectedItemNotifier.value) ?? "";
-      String? selectedIndexValue = selectedItemConvertor(currentItems[index]);
-      if (selectedItemNotifier.value != null) {
-        return selectedItemNotifier.value as T == currentItems[index];
-      } else {
-        return selectedValue == selectedIndexValue;
-      }
-    }
-  }
+  bool isItemSelected(int index, List<T> currentItems, List<T> sItems) =>
+      sItems.contains(currentItems[index]);
 
   BoxDecoration menuDecoration() {
     if (widget.decoration?.menuDecoration != null)
@@ -482,13 +446,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     }
   }
 
-  String? selectedItemConvertor(T? listData) {
-    if (listData != null && widget.selectedItemBuilder != null) {
-      return (widget.selectedItemBuilder!(context, listData as T)).data ?? "";
-    }
-    return null;
-  }
-
   Widget emptyErrorWidget() {
     return Container(
       key: errorButtonKey,
@@ -498,7 +455,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            if (widget.canShowButton)
+            if (widget.decoration?.canShowButton ?? false)
               if (widget.addButton != null)
                 SizedBox(
                     key: widget.addButtonKey,
@@ -506,7 +463,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                         widget.addButton ?? SizedBox(key: widget.addButtonKey)),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              child: widget.errorMessage ?? const Text("No options"),
+              child:
+                  widget.decoration?.errorMessage ?? const Text("No options"),
             ),
           ],
         ),

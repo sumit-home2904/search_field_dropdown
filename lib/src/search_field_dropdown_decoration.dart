@@ -31,7 +31,10 @@ class SearchFieldDropdownDecoration {
 
   final double? elevation;
 
-  // Custom multiselect decoration
+  /// Optional custom trailing widget for each multi-select row.
+  ///
+  /// This is a visual builder only; the dropdown still toggles selection from
+  /// the row tap so teams have a single selection path to debug.
   final MultiSelectCheckBuilder? multiSelectCheckBuilder;
   final IconData? multiSelectCheckedIcon;
   final IconData? multiSelectUncheckedIcon;
@@ -48,8 +51,16 @@ class SearchFieldDropdownDecoration {
   /// Set the overall unified row padding encapsulating the list item and checkbox natively.
   final EdgeInsetsGeometry? itemPadding;
 
+  /// Enables rendering of the optional [SearchFieldDropdown.addButton]
+  /// section above the list inside the overlay.
   final bool? canShowButton;
   final Offset? dropdownOffset;
+
+  /// Turns on multi-select mode for the entire dropdown flow.
+  ///
+  /// This flag affects selection bookkeeping in `SearchFieldDropdownState`
+  /// and row rendering inside `OverlayBuilder`, so keep it in decoration as
+  /// the single source of truth for multi-select visuals and behavior.
   final bool? isMultiSelect;
   final double? overlayHeight;
   final TextAlign? textAlign;

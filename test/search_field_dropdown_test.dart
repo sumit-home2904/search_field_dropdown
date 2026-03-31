@@ -26,10 +26,16 @@ void main() {
     Function(List<String>)? onItemsChanged,
     SearchFieldDropdownDecoration? decoration,
     OverlayPortalController? controller,
+    FocusNode? focusNode,
+    String? initialItem,
+    List<String>? initialItems,
     List<String> items = const ['Alpha', 'Beta', 'Gamma'],
   }) {
     return SearchFieldDropdown<String>(
       controller: controller,
+      focusNode: focusNode,
+      initialItem: initialItem,
+      initialItems: initialItems,
       item: items,
       onChanged: onChanged,
       onItemsChanged: onItemsChanged,
@@ -119,6 +125,78 @@ void main() {
 
     expect(changedItem, 'Beta');
     expect(changedItems, <String>['Beta']);
+  });
+
+  testWidgets('single select keeps chosen value without parent rebuild',
+      (tester) async {
+    await tester.pumpWidget(
+      buildTestApp(
+        child: buildDropdown(),
+      ),
+    );
+
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('item-Beta')));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField));
+    expect(field.controller?.text, 'Beta');
+  });
+
+  testWidgets('focus loss keeps live multiselect text, not stale initial items',
+      (tester) async {
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      buildTestApp(
+        child: buildDropdown(
+          focusNode: focusNode,
+          initialItems: const ['Alpha'],
+          decoration: const SearchFieldDropdownDecoration(
+            isMultiSelect: true,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey<String>('item-Beta')));
+    await tester.pumpAndSettle();
+
+    focusNode.unfocus();
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byType(TextFormField));
+    expect(field.controller?.text, 'Alpha, Beta');
+  });
+
+  testWidgets('multiselect renders checkbox builder when enabled',
+      (tester) async {
+    await tester.pumpWidget(
+      buildTestApp(
+        child: buildDropdown(
+          decoration: SearchFieldDropdownDecoration(
+            isMultiSelect: true,
+            multiSelectCheckBuilder: (context, selected) {
+              return Checkbox(
+                value: selected,
+                onChanged: null,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Checkbox), findsWidgets);
   });
 
   testWidgets('dropdownOffset from decoration is applied to overlay position',

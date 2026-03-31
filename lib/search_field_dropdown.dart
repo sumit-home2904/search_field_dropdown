@@ -129,18 +129,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   final ValueNotifier<int> focusedIndexNotifier = ValueNotifier<int>(-1);
 
+  // `initialItem` / `initialItems` are external sync inputs from the parent.
+  // After the first frame, the live selection source of truth is held in these
+  // notifiers so the field text and overlay stay in sync even before a parent
+  // rebuild arrives.
   void removeSelectedItem(T item) {
     if (selectedItemsNotifier.value.contains(item)) {
       final updatedList = List<T>.from(selectedItemsNotifier.value)
         ..remove(item);
       selectedItemsNotifier.value = updatedList;
-      if (_showSelectedItemsInField) {
-        textController.text =
-            selectedItemsConvertor(listData: updatedList) ?? "";
-        if (updatedList.isEmpty) textController.clear();
-      } else {
-        textController.clear();
-      }
+      _syncFieldTextFromSelection();
       widget.onChanged?.call(item);
       widget.onItemsChanged?.call(updatedList);
     }
@@ -169,6 +167,28 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   final SearchTimerMethod _searchDebounce =
       SearchTimerMethod(milliseconds: 350);
 
+  void _syncFieldTextFromSelection() {
+    if (_isMultiSelect) {
+      if (!_showSelectedItemsInField || selectedItemsNotifier.value.isEmpty) {
+        textController.clear();
+        return;
+      }
+
+      textController.text =
+          selectedItemsConvertor(listData: selectedItemsNotifier.value) ?? "";
+      return;
+    }
+
+    if (selectedItemNotifier.value == null) {
+      textController.clear();
+      return;
+    }
+
+    textController.text =
+        selectedItemConvertor(listData: selectedItemNotifier.value) ??
+            "${selectedItemNotifier.value}";
+  }
+
   /// Guard: only call setState when focusedIndex actually changes.
   void changeFocusIndex(int index) {
     if (focusedIndexNotifier.value == index) return;
@@ -196,16 +216,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       itemsNotifier.value = widget.item;
       if (_isMultiSelect) {
         selectedItemsNotifier.value = List.from(widget.initialItems ?? []);
-        if (_showSelectedItemsInField) {
-          textController.text =
-              selectedItemsConvertor(listData: selectedItemsNotifier.value) ??
-                  "";
-        }
       } else {
-        textController.text =
-            selectedItemConvertor(listData: widget.initialItem) ?? "";
         selectedItemNotifier.value = widget.initialItem;
       }
+      _syncFieldTextFromSelection();
     });
   }
 
@@ -250,28 +264,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
   void _restoreFieldValueAfterDismiss() {
     itemsNotifier.value = widget.item;
-    if (_isMultiSelect) {
-      if (_showSelectedItemsInField) {
-        if (selectedItemsNotifier.value.isEmpty) {
-          textController.clear();
-        } else {
-          textController.text =
-              selectedItemsConvertor(listData: selectedItemsNotifier.value) ??
-                  "";
-        }
-      } else {
-        textController.clear();
-      }
-      return;
-    }
-
-    if (selectedItemNotifier.value == null) {
-      textController.clear();
-    } else {
-      textController.text =
-          selectedItemConvertor(listData: selectedItemNotifier.value) ??
-              "${selectedItemNotifier.value}";
-    }
+    _syncFieldTextFromSelection();
   }
 
   void _dismissOverlay({bool resetText = false}) {
@@ -303,17 +296,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       if (mounted) {
         // Reset search results so the next open shows the full list.
         itemsNotifier.value = widget.item;
-        if (_isMultiSelect) {
-          if (_showSelectedItemsInField) {
-            textController.text =
-                selectedItemsConvertor(listData: widget.initialItems) ?? "";
-          } else {
-            textController.clear();
-          }
-        } else {
-          textController.text =
-              selectedItemConvertor(listData: widget.initialItem) ?? "";
-        }
+        _syncFieldTextFromSelection();
       }
     }
   }
@@ -366,33 +349,23 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           if (!mounted) return;
           if (widget.initialItems == null || widget.initialItems!.isEmpty) {
             selectedItemsNotifier.value = [];
-            textController.clear();
           } else {
             selectedItemsNotifier.value = List.from(widget.initialItems!);
-            if (_showSelectedItemsInField) {
-              textController.text = selectedItemsConvertor(
-                      listData: selectedItemsNotifier.value) ??
-                  "";
-            } else {
-              textController.clear();
-            }
           }
+          _syncFieldTextFromSelection();
         });
       }
     } else {
-      // Only schedule a callback if initialItem actually changed —
-      // avoids running a postFrameCallback every didUpdateWidget.
+      // Parent-driven controlled updates still flow back in here.
       if (widget.initialItem != oldWidget.initialItem) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           if (widget.initialItem == null) {
             selectedItemNotifier.value = null;
-            textController.clear();
           } else {
             selectedItemNotifier.value = widget.initialItem;
-            textController.text =
-                selectedItemConvertor(listData: widget.initialItem) ?? "";
           }
+          _syncFieldTextFromSelection();
         });
       }
     }
@@ -471,14 +444,7 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           currentList.add(tappedItem);
         }
         selectedItemsNotifier.value = currentList;
-
-        if (_showSelectedItemsInField) {
-          textController.text =
-              selectedItemsConvertor(listData: currentList) ?? "";
-          if (currentList.isEmpty) {
-            textController.clear();
-          }
-        }
+        _syncFieldTextFromSelection();
         widget.onChanged?.call(tappedItem);
         widget.onItemsChanged?.call(currentList);
       }
@@ -486,15 +452,8 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       _dismissOverlay();
       if (itemsNotifier.value.isNotEmpty) {
         selectedItemNotifier.value = itemsNotifier.value[index];
-        textController.text =
-            selectedItemConvertor(listData: selectedItemNotifier.value) ??
-                "${selectedItemNotifier.value}";
+        _syncFieldTextFromSelection();
         widget.onChanged?.call(itemsNotifier.value[index]);
-
-        if (widget.initialItem == null) {
-          textController.clear();
-          selectedItemNotifier.value = null;
-        }
         focusedIndexNotifier.value = -1;
       }
     }
@@ -581,7 +540,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                           isKeyboardNavigationNotifier,
                       itemListKey: itemListKey,
                       addButtonKey: addButtonKey,
-                      onChanged: widget.onChanged,
                       dropdownOffset: widget.decoration?.dropdownOffset,
                       decoration: widget.decoration,
                       changeIndex: changeFocusIndex,
@@ -589,16 +547,11 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       addButton: widget.addButton,
                       controller: _overlayController,
                       textController: textController,
-                      initialItem: widget.initialItem,
+                      isMultiSelect: _isMultiSelect,
                       isApiLoadingNotifier: isApiLoadingNotifier,
                       loaderWidget: widget.loaderWidget,
                       listItemBuilder: widget.listItemBuilder,
                       errorWidgetHeight: widget.errorWidgetHeight,
-                      selectedItemBuilder: widget.selectedItemBuilder,
-                      readOnly: isTypingDisabledNotifier.value
-                          ? true
-                          : widget.decoration?.readOnly ?? false,
-                      fieldReadOnly: _fieldReadOnly,
                     ),
                   ],
                 );

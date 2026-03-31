@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 class AnimatedSection extends StatefulWidget {
   final bool expand;
-  final VoidCallback animationDismissed;
   final Widget child;
   final double axisAlignment;
+  final VoidCallback animationDismissed;
 
   const AnimatedSection({
     super.key,
     this.expand = false,
-    required this.animationDismissed,
     required this.child,
     required this.axisAlignment,
+    required this.animationDismissed,
   });
 
   @override
@@ -20,8 +20,8 @@ class AnimatedSection extends StatefulWidget {
 
 class AnimatedSectionState extends State<AnimatedSection>
     with SingleTickerProviderStateMixin {
-  late AnimationController animController;
   late Animation<double> animation;
+  late AnimationController animController;
 
   @override
   void initState() {

@@ -47,6 +47,7 @@ final GlobalKey<SearchFieldDropdownState<String>> dropdownKey = GlobalKey<Search
 ```
 
 ```dart
+final itemList = ['Option 1', 'Option 2', 'Option 3'];
 
 class DropDownClass extends StatelessWidget {
   const DropDownClass({super.key});
@@ -56,10 +57,17 @@ class DropDownClass extends StatelessWidget {
     return Scaffold(
       body: SearchFieldDropdown<String>(
         key: dropdownKey, // Attach the GlobalKey to the widget
-        items: ['Option 1', 'Option 2', 'Option 3'],
+        item: itemList,
         onChanged: (value) {
           print('Selected: $value');
         },
+        listItemBuilder: (context, item, isActive) {
+          return Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(item),
+          );
+        },
+        selectedItemBuilder: (context, item) => Text(item),
       )
     );
   }
@@ -83,7 +91,6 @@ class DropDownClass extends StatelessWidget {
           SearchFieldDropdown<String>(
             item : itemList,
             controller: itemController,
-            canShowButton: true,
             addButton:  InkWell(
               onTap: () {
                 // add your event's
@@ -115,6 +122,7 @@ class DropDownClass extends StatelessWidget {
               ),
             ),
             decoration: SearchFieldDropdownDecoration(
+              canShowButton: true,
               textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
               menuDecoration: BoxDecoration(
                   color: Colors.white,
@@ -232,11 +240,12 @@ Advanced usage example featuring multi-select configurations, custom selection p
 
 ```dart
 SearchFieldDropdown<String>(
-  isMultiSelect: true,
   initialItems: [],
   item: ['Apple', 'Banana', 'Orange', 'Mango'],
   controller: itemController,
   decoration: SearchFieldDropdownDecoration(
+      isMultiSelect: true,
+      showSelectedItemsInField: false,
       textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
       fieldDecoration: const InputDecoration(hintText: "Select multiple fruits"),
   ),
@@ -252,7 +261,6 @@ SearchFieldDropdown<String>(
   selectedItemsBuilder: (context, items) { // Customise string output shown in the field
     return items.join(', ');
   },
-  showSelectedItemsInField: false, // Prevents text populating the main field if you prefer chips below it
   multiSelectDisplayBuilder: (context, selectedItems, onRemove) { // Chips built automatically underneath Dropdown
     if (selectedItems.isEmpty) return const SizedBox.shrink();
     return Wrap(
@@ -268,44 +276,69 @@ SearchFieldDropdown<String>(
 )
 ```
 
+`listItemBuilder` ka third boolean currently active row ko represent karta hai, jo keyboard navigation aur hover styling ke liye useful hai. Multi-select checked state ko customize karna ho to `decoration.multiSelectCheckBuilder` use karein.
+
 ## Properties
+
+### SearchFieldDropdown widget props
 
 | Property | Type | Description |
 |---|---|---|
 | `key` | `GlobalKey<SearchFieldDropdownState>()` | Use for maintain state. |
-| `item` | `List<T>?` | List of dropdown items to display. |
-| `isMultiSelect` | `bool` | Enables multi-select capabilities with internal checkboxes. |
+| `item` | `List<T>` | List of dropdown items to display. |
 | `initialItems` | `List<T>?` | Defines multiple initial entries for multi-select. |
 | `initialItem` | `T?` | Initial value for the single-select dropdown. |
-| `decoration` | `SearchFieldDropdownDecoration?` | Container unifying custom cursor, menu layouts, backgrounds, padding, and text field styles. |
-| `fieldReadOnly` | `bool` | Makes `TextFormField` readonly. |
-| `readOnly` | `bool` | Makes dropdown readonly. |
-| `parentScrollController` | `ScrollController?` | Optional parent scroll controller used to auto-dismiss the dropdown on outer scroll reliably. |
-| `closeDropdownOnParentScroll` | `bool` | Auto closes the open dropdown when its parent `ScrollView` starts scrolling. |
+| `decoration` | `SearchFieldDropdownDecoration?` | Holds dropdown styling plus behavior flags such as multi-select, readonly, overlay sizing, and parent-scroll handling. |
 | `isApiLoading` | `bool` | Indicates if the API is loading. |
-| `dropdownOffset` | `bool` | Change drop-down opening offset |
-| `showCursor` | `bool?` | Toggles the cursor visibility. |
 | `loaderWidget` | `Widget?` | Custom widget to show during API loading. |
 | `focusNode` | `FocusNode?` | Manages focus for searchable dropdowns. |
-| `errorMessage` | `Text?` | Custom error message when no items are found. |
-| `overlayHeight` | `double?` | Height of the dropdown overlay. |
 | `addButton` | `Widget?` | Adds a custom button for additional functionality. |
 | `onChanged` | `Function(T? value)` | Callback triggered when a single item is selected. |
 | `onItemsChanged` | `Function(List<T> values)` | Callback triggered when multiple items are selected. |
 | `onTap` | `Future<List<T>> Function()` | Loads items dynamically for the dropdown. |
 | `autovalidateMode` | `AutovalidateMode?` | Enables validation listener when items change. |
 | `controller` | `OverlayPortalController` | Controls dropdown visibility programmatically. |
-| `listItemBuilder` | `ListItemBuilder<T>` | Custom builder for dropdown items. |
-| `selectedItemBuilder` | `SelectedItemBuilder<T?>?` | Custom builder for the selected single item. |
+| `listItemBuilder` | `ListItemBuilder<T>` | Custom builder for dropdown rows. The third argument is the currently active row for keyboard/hover styling. |
+| `selectedItemBuilder` | `SelectedItemBuilder<T>?` | Custom builder for the selected single item. |
 | `selectedItemsBuilder` | `SelectedItemsBuilder<T>?` | Custom text formatting for multiple selected items. |
 | `multiSelectDisplayBuilder` | `MultiSelectDisplayBuilder<T>?` | Custom UI generic display below the search field (e.g. chips). |
-| `showSelectedItemsInField` | `bool` | Determines whether the main search text field renders strings derived from selected items. |
 | `onSearch` | `Future<List<T>> Function(String)` | Callback for API-based search functionality. |
-| `canShowButton` | `bool` | Toggles the visibility of the add button. |
-| `textAlign` | `TextAlign` | Aligns the text in the search field. |
-| `keyboardType` | `TextInputType?` | Sets the input type for the `TextFormField`. |
-| `maxLine` | `int?` | Limits the maximum number of text lines. |
-| `maxLength` | `int?` | Limits the maximum number of characters. |
 | `inputFormatters` | `List<TextInputFormatter>?` | Applies input formatting rules to the `TextFormField`. |
 | `validator` | `String? Function(String?)` | Validates the dropdown value. |
 | `enableInteractiveSelection` | `bool?` | Enables or disables text selection in TextFormField |
+
+### SearchFieldDropdownDecoration props
+
+| Property | Type | Description |
+|---|---|---|
+| `isMultiSelect` | `bool?` | Enables multi-select capabilities with internal checkbox support. |
+| `showSelectedItemsInField` | `bool?` | Controls whether selected multi-select values are rendered back into the field text. |
+| `multiSelectCheckBuilder` | `MultiSelectCheckBuilder?` | Custom trailing indicator for each multi-select row. This is typically visual-only while row taps handle selection. |
+| `multiSelectCheckedIcon` | `IconData?` | Icon used for selected items when no custom check builder is supplied. |
+| `multiSelectUncheckedIcon` | `IconData?` | Icon used for unselected items when no custom check builder is supplied. |
+| `multiSelectCheckedIconColor` | `Color?` | Color for the selected icon state. |
+| `multiSelectUncheckedIconColor` | `Color?` | Color for the unselected icon state. |
+| `canShowButton` | `bool?` | Toggles the visibility of the optional add button area inside the overlay. |
+| `fieldReadOnly` | `bool?` | Makes the internal `TextFormField` readonly. |
+| `readOnly` | `bool?` | Prevents the dropdown overlay from opening on tap. |
+| `parentScrollController` | `ScrollController?` | Optional parent scroll controller used to auto-dismiss the dropdown on outer scroll reliably. |
+| `closeDropdownOnParentScroll` | `bool?` | Auto closes the open dropdown when its parent `ScrollView` starts scrolling. |
+| `dropdownOffset` | `Offset?` | Adjusts the overlay position relative to the text field. |
+| `overlayHeight` | `double?` | Preferred maximum height of the dropdown overlay. |
+| `errorMessage` | `Text?` | Custom error widget text when no items are found. |
+| `textStyle` | `TextStyle?` | Styles the field text. |
+| `textAlign` | `TextAlign?` | Aligns the text in the field. |
+| `keyboardType` | `TextInputType?` | Sets the input type for the `TextFormField`. |
+| `showCursor` | `bool?` | Toggles the cursor visibility. |
+| `cursorColor` | `Color?` | Sets cursor color. |
+| `cursorHeight` | `double?` | Sets cursor height. |
+| `cursorWidth` | `double?` | Sets cursor width. |
+| `cursorRadius` | `Radius?` | Sets cursor radius. |
+| `cursorErrorColor` | `Color?` | Sets cursor error color. |
+| `menuDecoration` | `BoxDecoration?` | Styles the dropdown container. |
+| `fieldDecoration` | `InputDecoration?` | Styles the text field. |
+| `listPadding` | `EdgeInsetsGeometry?` | Padding applied to the overlay list. |
+| `elevation` | `double?` | Elevation of the dropdown card. |
+| `focusedItemDecoration` | `BoxDecoration?` | Decoration applied to the active row. |
+| `unfocusedItemDecoration` | `BoxDecoration?` | Decoration applied to non-active rows. |
+| `itemPadding` | `EdgeInsetsGeometry?` | Shared padding applied around each row item. |
