@@ -99,7 +99,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   void _measureField() {
     if (!mounted) return;
     final fb = widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fb != null) {
+    if (fb != null && fb.attached) {
       final size = fb.size;
       if (size.height != fieldHeightNotifier.value) {
         fieldHeightNotifier.value = size.height;
@@ -146,7 +146,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   double _availableScreenHeight() {
     final RenderBox? fb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fb == null) return _requestedOverlayHeight(false);
+    if (fb == null || !fb.attached) return _requestedOverlayHeight(false);
     final offset = fb.localToGlobal(Offset.zero);
     final mq = MediaQuery.of(context);
     final double keyboardH = mq.viewInsets.bottom;
@@ -169,7 +169,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     if (!mounted) return;
     final RenderBox? fb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fb == null) return;
+    if (fb == null || !fb.attached) return;
 
     final mq = MediaQuery.of(context);
     final double keyboardH = mq.viewInsets.bottom;
@@ -219,7 +219,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     _scheduleOverlayMeasurement();
     final RenderBox? fieldRb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fieldRb == null) return const SizedBox.shrink();
+    if (fieldRb == null || !fieldRb.attached) return const SizedBox.shrink();
 
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -232,6 +232,13 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
         fieldWidthNotifier,
       ]),
       builder: (context, child) {
+        // Re-check attachment inside the builder callback — the render
+        // object may have been detached between the outer build() and
+        // this callback (e.g. when a DataTable row is removed).
+        final RenderBox? rb =
+            widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+        if (rb == null || !rb.attached) return const SizedBox.shrink();
+
         final currentItems = widget.itemsNotifier.value;
         final isLoading = widget.isApiLoadingNotifier.value;
         final fIndex = widget.focusedIndexNotifier.value;
@@ -317,6 +324,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                   if (!mounted) return;
                   RenderBox? renderBox = widget.itemListKey.currentContext
                       ?.findRenderObject() as RenderBox?;
+                  if (renderBox != null && !renderBox.attached) return;
                   final double itemHeight = renderBox?.size.height ?? 30;
                   final double firstVisibleIndex =
                       widget.scrollController.offset / itemHeight;

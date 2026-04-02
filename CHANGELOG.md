@@ -1,3 +1,8 @@
+# 1.2.5
+- Fixed `'attached': is not true` assertion crash when the dropdown's parent widget (e.g., a DataTable row) is removed while the overlay is still active or performing measurements.
+- Added comprehensive `.attached` guards to all `RenderBox` operations in `OverlayBuilder` and `SearchFieldDropdown`.
+- Added regression tests to ensure stability during dynamic list/table row removals.
+
 # 1.2.4
 - Fixed missing multi-select overlay wiring so checkbox icons and `multiSelectCheckBuilder` now render correctly in both local and API-backed dropdowns.
 - Fixed selected field text syncing so single-select and multi-select values stay aligned with live internal state instead of falling back to stale initial values.

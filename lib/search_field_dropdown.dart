@@ -394,10 +394,13 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     RenderBox? addButtonRender =
         addButtonKey.currentContext?.findRenderObject() as RenderBox?;
 
-    if (renderBox == null) return;
+    if (renderBox == null || !renderBox.attached) return;
 
     final double itemHeight = renderBox.size.height;
-    final double addButtonHeight = addButtonRender?.size.height ?? 0;
+    final double addButtonHeight =
+        (addButtonRender != null && addButtonRender.attached)
+            ? addButtonRender.size.height
+            : 0;
     final double configuredOverlayHeight =
         widget.decoration?.overlayHeight ?? 150;
     final double usableOverlayHeight =
@@ -490,7 +493,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
               focusedIndexNotifier.value = 0;
               RenderBox? renderBox =
                   itemListKey.currentContext?.findRenderObject() as RenderBox?;
-              if (renderBox != null && scrollController.hasClients) {
+              if (renderBox != null &&
+                  renderBox.attached &&
+                  scrollController.hasClients) {
                 scrollController.jumpTo(
                   focusedIndexNotifier.value * renderBox.size.height,
                 );
@@ -646,7 +651,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
 
     RenderBox? renderBox =
         itemListKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox != null && scrollController.hasClients) {
+    if (renderBox != null &&
+        renderBox.attached &&
+        scrollController.hasClients) {
       scrollController.jumpTo(0);
     }
 

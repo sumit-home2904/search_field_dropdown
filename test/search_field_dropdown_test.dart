@@ -367,4 +367,193 @@ void main() {
     expect(controller.offset, greaterThan(0));
     expect(find.byType(Card), findsOneWidget);
   });
+
+  // ---------------------------------------------------------------
+  // Regression: removing a list-row that contains a SearchFieldDropdown
+  // used to crash with 'attached: is not true' because the overlay's
+  // AnimatedBuilder still held a reference to the now-detached RenderBox.
+  // ---------------------------------------------------------------
+  testWidgets(
+      'no crash when a row containing the dropdown is removed from the list',
+      (tester) async {
+    // Simulate a DataTable-like list where each row has its own dropdown.
+    final rows = ValueNotifier<List<String>>(['Row A', 'Row B', 'Row C']);
+
+    Widget buildRowList() {
+      return MaterialApp(
+        home: Scaffold(
+          body: ValueListenableBuilder<List<String>>(
+            valueListenable: rows,
+            builder: (context, currentRows, _) {
+              return ListView(
+                children: currentRows.map((rowLabel) {
+                  return Padding(
+                    key: ValueKey<String>(rowLabel),
+                    padding: const EdgeInsets.all(8),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(rowLabel)),
+                        SizedBox(
+                          width: 200,
+                          child: SearchFieldDropdown<String>(
+                            item: const ['Option 1', 'Option 2'],
+                            listItemBuilder: (ctx, item, sel) => Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text(item,
+                                  key:
+                                      ValueKey<String>('$rowLabel-item-$item')),
+                            ),
+                            selectedItemBuilder: (ctx, item) => Text(item),
+                          ),
+                        ),
+                        IconButton(
+                          key: ValueKey<String>('delete-$rowLabel'),
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            rows.value = List<String>.from(rows.value)
+                              ..remove(rowLabel);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRowList());
+    await tester.pumpAndSettle();
+
+    // Verify 3 rows are rendered
+    expect(find.text('Row A'), findsOneWidget);
+    expect(find.text('Row B'), findsOneWidget);
+    expect(find.text('Row C'), findsOneWidget);
+
+    // Open dropdown in Row B
+    final textFields = find.byType(TextFormField);
+    expect(textFields, findsNWidgets(3));
+    await tester.tap(textFields.at(1)); // Row B's text field
+    await tester.pumpAndSettle();
+
+    // Dropdown overlay should be visible
+    expect(find.byType(Card), findsOneWidget);
+
+    // Remove Row B while its dropdown is open — this is the crash scenario.
+    // We mutate the list directly (simulating a parent setState / DataTable
+    // row removal) rather than tapping the delete button which is behind
+    // the overlay's dismiss barrier.
+    rows.value = List<String>.from(rows.value)..remove('Row B');
+    await tester.pumpAndSettle();
+
+    // Should NOT crash; Row B should be gone
+    expect(find.text('Row B'), findsNothing);
+    expect(find.text('Row A'), findsOneWidget);
+    expect(find.text('Row C'), findsOneWidget);
+
+    // No exceptions should have been thrown
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('no crash when multiple rows are removed rapidly from a list',
+      (tester) async {
+    final rows = ValueNotifier<List<String>>(['R1', 'R2', 'R3', 'R4', 'R5']);
+
+    Widget buildRowList() {
+      return MaterialApp(
+        home: Scaffold(
+          body: ValueListenableBuilder<List<String>>(
+            valueListenable: rows,
+            builder: (context, currentRows, _) {
+              return ListView(
+                children: currentRows.map((rowLabel) {
+                  return Padding(
+                    key: ValueKey<String>(rowLabel),
+                    padding: const EdgeInsets.all(8),
+                    child: SizedBox(
+                      width: 200,
+                      child: SearchFieldDropdown<String>(
+                        item: const ['A', 'B'],
+                        listItemBuilder: (ctx, item, sel) => Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(item),
+                        ),
+                        selectedItemBuilder: (ctx, item) => Text(item),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRowList());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextFormField), findsNWidgets(5));
+
+    // Open dropdown on 3rd item
+    await tester.tap(find.byType(TextFormField).at(2));
+    await tester.pumpAndSettle();
+
+    // Rapidly remove rows while overlay may still be reacting
+    rows.value = ['R1', 'R5']; // remove R2, R3, R4 at once
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('removing the ONLY row with a dropdown does not crash',
+      (tester) async {
+    final rows = ValueNotifier<List<String>>(['Solo']);
+
+    Widget buildRowList() {
+      return MaterialApp(
+        home: Scaffold(
+          body: ValueListenableBuilder<List<String>>(
+            valueListenable: rows,
+            builder: (context, currentRows, _) {
+              return Column(
+                children: currentRows.map((rowLabel) {
+                  return SizedBox(
+                    key: ValueKey<String>(rowLabel),
+                    width: 200,
+                    child: SearchFieldDropdown<String>(
+                      item: const ['X', 'Y'],
+                      listItemBuilder: (ctx, item, sel) => Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(item),
+                      ),
+                      selectedItemBuilder: (ctx, item) => Text(item),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRowList());
+    await tester.pumpAndSettle();
+
+    // Open dropdown
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    // Remove the only row
+    rows.value = [];
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextFormField), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
