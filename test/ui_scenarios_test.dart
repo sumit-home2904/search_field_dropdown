@@ -37,7 +37,8 @@ void main() {
   }
 
   group('UI Scenarios Testing', () {
-    testWidgets('Dropdown inside AlertDialog behaves correctly', (tester) async {
+    testWidgets('Dropdown inside AlertDialog behaves correctly',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -92,7 +93,8 @@ void main() {
       expect(field.controller?.text, 'Option B');
     });
 
-    testWidgets('Dropdown inside BottomSheet behaves correctly', (tester) async {
+    testWidgets('Dropdown inside BottomSheet behaves correctly',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -164,17 +166,18 @@ void main() {
           ),
         ),
       );
-      
+
       // Unfortunately there is no standard validator input directly in the Dropdown API yet unless we implemented one.
       // But we can check if it passes standard bounds check.
       // Assuming it does not crash when inside a Form.
       await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
-      
+
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Dropdowns inside DataTable do not crash list view', (tester) async {
+    testWidgets('Dropdowns inside DataTable do not crash list view',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -207,10 +210,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Card), findsOneWidget); // Overlay should be visible
-      
-      await tester.tap(find.byKey(const ValueKey<String>('item-Option A')).first);
+
+      await tester
+          .tap(find.byKey(const ValueKey<String>('item-Option A')).first);
       await tester.pumpAndSettle();
-      
+
       expect(tester.takeException(), isNull);
     });
   });

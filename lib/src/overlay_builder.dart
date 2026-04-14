@@ -458,7 +458,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     return Container(
       key: errorButtonKey,
       child: SizedBox(
-        height: widget.errorWidgetHeight??150,
+        height: widget.errorWidgetHeight ?? 150,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
