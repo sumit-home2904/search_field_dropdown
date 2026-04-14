@@ -1,3 +1,6 @@
+# 1.2.6
+- error widget overflow issue fixed
+
 # 1.2.5
 - Fixed `'attached': is not true` assertion crash when the dropdown's parent widget (e.g., a DataTable row) is removed while the overlay is still active or performing measurements.
 - Added comprehensive `.attached` guards to all `RenderBox` operations in `OverlayBuilder` and `SearchFieldDropdown`.
