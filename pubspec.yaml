@@ -1,12 +1,20 @@
 name: search_field_dropdown
 description: A customizable dropdown widget for Flutter with advanced styling, search functionality, and dynamic data handling.
+topics:
+  - Searchable Dropdown Flutter
+  - flutter search dropdown
+  - flutter custom dropdown
+  - flutter searchable dropdown
+  - flutter search field dropdown
+  - flutter dropdown with search
+  - flutter searchable dropdown with search
 homepage: https://github.com/sumit-home2904/search_field_dropdown/tree/main/example
 repository: https://github.com/sumit-home2904/search_field_dropdown/
 issue_tracker: https://github.com/sumit-home2904/search_field_dropdown/issues
 Publisher: Sumit Sharma
 license: MIT
 
-version: 1.2.6
+version: 1.2.7
 
 environment:
   sdk: ^3.5.3

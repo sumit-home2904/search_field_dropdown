@@ -158,316 +158,102 @@ class _DropDownClassState extends State<DropDownClass> {
             style: TextStyle(color: Colors.white),
           ),
         ),
-        body: CallbackShortcuts(
-          bindings: {
-            LogicalKeySet(LogicalKeyboardKey.tab): () async {
-              if (focusNode.hasFocus) {
-                focusNode2.requestFocus();
-                stateController.show();
-                countryController.hide();
-                cityController.hide();
-              } else if (focusNode2.hasFocus) {
-                focusNode3.requestFocus();
-                stateController.hide();
-                countryController.hide();
-                cityController.show();
-              } else if (focusNode3.hasFocus) {
-                focusNode.requestFocus();
-                stateController.hide();
-                cityController.hide();
-                countryController.show();
-              }
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                        child: SearchFieldDropdown<CountryModel>(
-                      focusNode: focusNode,
-                      enableInteractiveSelection: true,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      controller: countryController,
-                      initialItem: selectedCountry,
-                      item: countryList,
-                      decoration: SearchFieldDropdownDecoration(
-                        textStyle: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w400),
-                        menuDecoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.blueAccent),
-                        ),
-                        fieldDecoration: InputDecoration(
-                          suffixIcon: IntrinsicWidth(
-                            child: Row(
-                              children: [
-                                if (selectedCountry != null)
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        isHidde = false;
-                                        tempCityList = [];
-                                        tempStatesList = [];
-                                        // print(tempStatesList.length);
-                                        selectedCity = null;
-                                        selectedState = null;
-                                        selectedCountry = null;
-                                        loadCountry();
-                                      });
-                                    },
-                                    child: const Icon(
-                                      Icons.clear,
-                                      size: 20,
-                                    ),
-                                  ),
-                                if (selectedCountry != null)
-                                  const SizedBox(width: 5),
-                                const Icon(
-                                  Icons.arrow_drop_down_sharp,
+                const Text("Simple Single Selection",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                SearchFieldDropdown<CountryModel>(
+                  focusNode: focusNode,
+                  enableInteractiveSelection: true,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  controller: countryController,
+                  initialItem: selectedCountry,
+                  item: countryList,
+                  decoration: SearchFieldDropdownDecoration(
+                    textStyle: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w400),
+                    menuDecoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.blueAccent),
+                    ),
+                    fieldDecoration: InputDecoration(
+                      hintText: "Select a country",
+                      suffixIcon: IntrinsicWidth(
+                        child: Row(
+                          children: [
+                            if (selectedCountry != null)
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    selectedCountry = null;
+                                  });
+                                },
+                                child: const Icon(
+                                  Icons.clear,
                                   size: 20,
                                 ),
-                                const SizedBox(width: 8),
-                              ],
+                              ),
+                            if (selectedCountry != null)
+                              const SizedBox(width: 5),
+                            const Icon(
+                              Icons.arrow_drop_down_sharp,
+                              size: 20,
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                          ],
                         ),
-                      ), // Close decoration
-                      onChanged: (CountryModel? value) {
-                        selectedCountry = value;
-                        setState(() {});
-                      },
-                      onSearch: (value) async {
-                        return countryList.where((element) {
-                          return element.name
-                              .toLowerCase()
-                              .contains(value.toLowerCase());
-                        }).toList();
-                      },
-                      listItemBuilder: (context, item, isSelected) {
-                        int index = countryList.indexOf(item);
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 5),
-                          margin:
-                              EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
-                          decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.green
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(2)),
-                          child: Text(
-                            item.name,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: isSelected ? Colors.white : Colors.black,
-                                fontWeight: FontWeight.w400),
-                          ),
-                        );
-                      },
-                      selectedItemBuilder: (context, item) {
-                        return Text(
-                          item.name,
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w400),
-                        );
-                      },
-                    )),
-                    const SizedBox(width: 15),
-                    Expanded(
-                        child: SearchFieldDropdown<StatesModel>(
-                      focusNode: focusNode2,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      controller: stateController,
-                      initialItem: selectedState,
-                      item: tempStatesList,
-                      decoration: SearchFieldDropdownDecoration(
-                        textStyle: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w400),
-                        menuDecoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.blueAccent),
-                        ),
-                        fieldDecoration: InputDecoration(
-                          suffixIcon: IntrinsicWidth(
-                            child: Row(
-                              children: [
-                                if (selectedState != null)
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedState = null;
-                                        if (selectedCountry == null) {
-                                          tempStatesList.clear();
-                                        }
-                                      });
-                                    },
-                                    child: const Icon(
-                                      Icons.clear,
-                                      size: 20,
-                                    ),
-                                  ),
-                                if (selectedState != null)
-                                  const SizedBox(width: 5),
-                                const Icon(
-                                  Icons.arrow_drop_down_sharp,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ), // Close decoration
-                      onChanged: (StatesModel? value) {
-                        setState(() {
-                          tempCityList = [];
-                          selectedCity = null;
-                          selectedState = value;
-
-                          tempCityList = cityList.where((element) {
-                            return "${element.stateId}" ==
-                                "${selectedState?.id}";
-                          }).toList();
-                        });
-                      },
-                      onSearch: (value) async {
-                        return statesList.where((element) {
-                          return element.name
-                              .toLowerCase()
-                              .contains(value.toLowerCase());
-                        }).toList();
-                      },
-                      listItemBuilder: (context, item, isSelected) {
-                        // print("isSelected $isSelected");
-                        int index = statesList.indexOf(item);
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 5),
-                          margin:
-                              EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
-                          decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.green
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(2)),
-                          child: Text(
-                            item.name,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: isSelected ? Colors.white : Colors.black,
-                                fontWeight: FontWeight.w400),
-                          ),
-                        );
-                      },
-                      selectedItemBuilder: (context, item) {
-                        return Text(
-                          item.name,
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w400),
-                        );
-                      },
-                    )),
-                    const SizedBox(width: 15),
-                    Expanded(
-                        child: SearchFieldDropdown<CityModel>(
-                      focusNode: focusNode3,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      controller: cityController,
-                      initialItem: selectedCity,
-                      item: tempCityList,
-                      decoration: SearchFieldDropdownDecoration(
-                        readOnly: tempCityList.isEmpty,
-                        textStyle: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w400),
-                        menuDecoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.blueAccent)),
-                        fieldDecoration: InputDecoration(
-                          suffixIcon: IntrinsicWidth(
-                            child: Row(
-                              children: [
-                                if (selectedCity != null)
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedCity = null;
-                                        if (selectedState == null) {
-                                          tempCityList.clear();
-                                        }
-                                      });
-                                    },
-                                    child: const Icon(
-                                      Icons.clear,
-                                      size: 20,
-                                    ),
-                                  ),
-                                if (selectedCity != null)
-                                  const SizedBox(width: 5),
-                                const Icon(
-                                  Icons.arrow_drop_down_sharp,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ), // Close decoration
-                      onChanged: (CityModel? value) {
-                        setState(() {
-                          selectedCity = value;
-                        });
-                      },
-                      onSearch: (value) async {
-                        return tempCityList.where((element) {
-                          return element.name
-                              .toLowerCase()
-                              .contains(value.toLowerCase());
-                        }).toList();
-                      },
-                      listItemBuilder: (context, item, isSelected) {
-                        int index = cityList.indexOf(item);
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 5),
-                          margin:
-                              EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
-                          decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Colors.green
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(2)),
-                          child: Text(
-                            item.name,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: isSelected ? Colors.white : Colors.black,
-                                fontWeight: FontWeight.w400),
-                          ),
-                        );
-                      },
-                      selectedItemBuilder: (context, item) {
-                        return Text(
-                          item.name,
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w400),
-                        );
-                      },
-                    ))
-                  ],
+                      ),
+                    ),
+                  ),
+                  onChanged: (CountryModel? value) {
+                    setState(() {
+                      selectedCountry = value;
+                    });
+                  },
+                  onSearch: (value) async {
+                    return countryList.where((element) {
+                      return element.name
+                          .toLowerCase()
+                          .contains(value.toLowerCase());
+                    }).toList();
+                  },
+                  listItemBuilder: (context, item, isSelected) {
+                    int index = countryList.indexOf(item);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 5),
+                      margin: EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
+                      decoration: BoxDecoration(
+                          color: isSelected ? Colors.green : Colors.transparent,
+                          borderRadius: BorderRadius.circular(2)),
+                      child: Text(
+                        item.name,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w400),
+                      ),
+                    );
+                  },
+                  selectedItemBuilder: (context, item) {
+                    return Text(
+                      item.name,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w400),
+                    );
+                  },
                 ),
-                const SizedBox(height: 15),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("Multi-Select Example (Cities)",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
+                const SizedBox(height: 30),
+                const Text("Simple Multi Selection",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
                 SearchFieldDropdown<CityModel>(
                   initialItems: selectedMultiCities,
@@ -494,7 +280,7 @@ class _DropDownClassState extends State<DropDownClass> {
                       hintText: "Select multiple cities",
                       suffixIcon: Icon(Icons.arrow_drop_down_sharp, size: 20),
                     ),
-                  ), // Close decoration
+                  ),
                   onItemsChanged: (List<CityModel> values) {
                     setState(() {
                       selectedMultiCities = values;
@@ -556,21 +342,16 @@ class _DropDownClassState extends State<DropDownClass> {
                     );
                   },
                 ),
-                const SizedBox(height: 15),
-
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text("API Multi-Select Example (Users)",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
+                const SizedBox(height: 30),
+                const Text("API Single Selection",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
                 SearchFieldDropdown<DummyUserModel>(
-                  initialItems: selectedApiUsers,
-                  controller: userApiController,
+                  controller: OverlayPortalController(),
                   isApiLoading: false,
-                  item: const [], // start empty
+                  item: const [],
                   onTap: () async {
-                    // Fetch all users on tap
                     final response = await http
                         .get(Uri.parse('https://dummyjson.com/users?limit=10'));
                     if (response.statusCode == 200) {
@@ -583,7 +364,6 @@ class _DropDownClassState extends State<DropDownClass> {
                     return [];
                   },
                   onSearch: (value) async {
-                    // TRUE SERVER-SIDE SEARCHING: Passing the search value directly to the remote API
                     final response = await http.get(Uri.parse(
                         'https://dummyjson.com/users/search?q=$value'));
                     if (response.statusCode == 200) {
@@ -595,8 +375,86 @@ class _DropDownClassState extends State<DropDownClass> {
                     }
                     return [];
                   },
-                  onChanged: (value) {
-                    print(value);
+                  onChanged: (DummyUserModel? value) {
+                    // Update state if needed
+                  },
+                  decoration: SearchFieldDropdownDecoration(
+                    textStyle: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w400),
+                    menuDecoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.blueAccent)),
+                    itemPadding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                    fieldDecoration: const InputDecoration(
+                      hintText: "Search remote user... (Try 'John')",
+                      suffixIcon: Icon(Icons.search, size: 20),
+                    ),
+                  ),
+                  listItemBuilder: (context, item, isSelected) {
+                    return Row(
+                      children: [
+                        CircleAvatar(
+                            radius: 14,
+                            backgroundImage: NetworkImage(item.image)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.name,
+                                  style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold)),
+                              Text(item.email,
+                                  style: const TextStyle(
+                                      fontSize: 11, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  selectedItemBuilder: (context, item) {
+                    return Text(item.name,
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400));
+                  },
+                ),
+                const SizedBox(height: 30),
+                const Text("API Multi Selection",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 8),
+                SearchFieldDropdown<DummyUserModel>(
+                  initialItems: selectedApiUsers,
+                  controller: userApiController,
+                  isApiLoading: false,
+                  item: const [],
+                  onTap: () async {
+                    final response = await http
+                        .get(Uri.parse('https://dummyjson.com/users?limit=10'));
+                    if (response.statusCode == 200) {
+                      Map<String, dynamic> data = json.decode(response.body);
+                      List users = data['users'];
+                      return users
+                          .map((e) => DummyUserModel.fromJson(e))
+                          .toList();
+                    }
+                    return [];
+                  },
+                  onSearch: (value) async {
+                    final response = await http.get(Uri.parse(
+                        'https://dummyjson.com/users/search?q=$value'));
+                    if (response.statusCode == 200) {
+                      Map<String, dynamic> data = json.decode(response.body);
+                      List users = data['users'];
+                      return users
+                          .map((e) => DummyUserModel.fromJson(e))
+                          .toList();
+                    }
+                    return [];
                   },
                   onItemsChanged: (List<DummyUserModel> values) {
                     setState(() {
@@ -604,7 +462,6 @@ class _DropDownClassState extends State<DropDownClass> {
                     });
                   },
                   decoration: SearchFieldDropdownDecoration(
-                    // overlayHeight: 20,
                     isMultiSelect: true,
                     showSelectedItemsInField: false,
                     textStyle: const TextStyle(
@@ -686,133 +543,6 @@ class _DropDownClassState extends State<DropDownClass> {
                     );
                   },
                 ),
-                const SizedBox(height: 15),
-
-                // Expanded(
-                //   child: ListView.builder(
-                //     shrinkWrap: true,
-                //     itemCount: 10,
-                //     itemBuilder: (context, index) {
-                //     return InkWell(
-                //       onTap: () {
-                //         Navigator.push(context, MaterialPageRoute(builder: (context) =>DropDownClass() ,));
-                //       },
-                //       child: Container(
-                //         height: 50,
-                //         margin: EdgeInsets.symmetric(vertical: 10),
-                //         child: Text("hello"),
-                //       )
-                //     );
-                //   },),
-                // ),
-
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: 15,
-                    itemBuilder: (context, index) {
-                      return InkWell(
-                        onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DropDownClass(),
-                              ));
-                        },
-                        child: SearchFieldDropdown<CountryModel>(
-                          enableInteractiveSelection: true,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          controller: countryController1[index],
-                          initialItem: selectedCountry,
-                          item: countryList,
-                          decoration: SearchFieldDropdownDecoration(
-                            fieldReadOnly: true,
-                            overlayHeight: 250,
-                            textStyle: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w400),
-                            menuDecoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.blueAccent),
-                            ),
-                            fieldDecoration: InputDecoration(
-                              suffixIcon: IntrinsicWidth(
-                                child: Row(
-                                  children: [
-                                    if (selectedCountry != null)
-                                      InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            isHidde = false;
-                                            tempCityList = [];
-                                            tempStatesList = [];
-                                            // print(tempStatesList.length);
-                                            selectedCity = null;
-                                            selectedState = null;
-                                            selectedCountry = null;
-                                            loadCountry();
-                                          });
-                                        },
-                                        child: const Icon(
-                                          Icons.clear,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    if (selectedCountry != null)
-                                      const SizedBox(width: 5),
-                                    const Icon(
-                                      Icons.arrow_drop_down_sharp,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ), // Close decoration
-                          onChanged: (CountryModel? value) {},
-                          onSearch: (value) async {
-                            return countryList.where((element) {
-                              return element.name
-                                  .toLowerCase()
-                                  .contains(value.toLowerCase());
-                            }).toList();
-                          },
-                          listItemBuilder: (context, item, isSelected) {
-                            int index = countryList.indexOf(item);
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 5),
-                              margin: EdgeInsets.fromLTRB(
-                                  5, index == 0 ? 7 : 2, 5, 1),
-                              decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.green
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(2)),
-                              child: Text(
-                                item.name,
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.black,
-                                    fontWeight: FontWeight.w400),
-                              ),
-                            );
-                          },
-                          selectedItemBuilder: (context, item) {
-                            return Text(
-                              item.name,
-                              style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.w400),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                )
               ],
             ),
           ),

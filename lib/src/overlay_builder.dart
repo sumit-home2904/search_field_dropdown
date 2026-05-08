@@ -19,7 +19,7 @@ class OverlayBuilder<T> extends StatefulWidget {
   final GlobalKey addButtonKey;
   final double? errorWidgetHeight;
   final Function(int) changeIndex;
-  final Function(int) onItemSelected;
+  final Function(T) onItemSelected;
   final Function(bool) changeKeyBool;
   final ScrollController scrollController;
   final OverlayPortalController controller;
@@ -361,7 +361,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                     },
                     child: InkWell(
                       key: fIndex == index ? widget.itemListKey : null,
-                      onTap: () => widget.onItemSelected(index),
+                      onTap: () => widget.onItemSelected(currentItems[index]),
                       child: Container(
                         padding: widget.decoration?.itemPadding,
                         decoration: selected

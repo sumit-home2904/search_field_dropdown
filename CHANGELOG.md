@@ -1,3 +1,9 @@
+# 1.2.7
+- Wrong item selection issue fixed
+- Keyboard done action issue fixed
+- Example app UI improved
+- README.md optimized
+
 # 1.2.6
 - error widget overflow issue fixed
 

@@ -294,9 +294,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       }
     } else {
       if (mounted) {
-        // Reset search results so the next open shows the full list.
-        itemsNotifier.value = widget.item;
-        _syncFieldTextFromSelection();
+        // Focus loss happens on pointer down before the tap is registered.
+        // Do not reset itemsNotifier or sync text here, otherwise the list
+        // and text will change right under the user's finger!
+        // The GestureDetector (tap outside) or onItemSelected will handle cleanup.
       }
     }
   }
@@ -436,29 +437,24 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   }
 
   /// Called when the user selects a drop-down item from the list.
-  onItemSelected(int index) {
+  onItemSelected(T tappedItem) {
     if (_isMultiSelect) {
-      if (itemsNotifier.value.isNotEmpty) {
-        T tappedItem = itemsNotifier.value[index];
-        final currentList = List<T>.from(selectedItemsNotifier.value);
-        if (currentList.contains(tappedItem)) {
-          currentList.remove(tappedItem);
-        } else {
-          currentList.add(tappedItem);
-        }
-        selectedItemsNotifier.value = currentList;
-        _syncFieldTextFromSelection();
-        widget.onChanged?.call(tappedItem);
-        widget.onItemsChanged?.call(currentList);
+      final currentList = List<T>.from(selectedItemsNotifier.value);
+      if (currentList.contains(tappedItem)) {
+        currentList.remove(tappedItem);
+      } else {
+        currentList.add(tappedItem);
       }
+      selectedItemsNotifier.value = currentList;
+      _syncFieldTextFromSelection();
+      widget.onChanged?.call(tappedItem);
+      widget.onItemsChanged?.call(currentList);
     } else {
       _dismissOverlay();
-      if (itemsNotifier.value.isNotEmpty) {
-        selectedItemNotifier.value = itemsNotifier.value[index];
-        _syncFieldTextFromSelection();
-        widget.onChanged?.call(itemsNotifier.value[index]);
-        focusedIndexNotifier.value = -1;
-      }
+      selectedItemNotifier.value = tappedItem;
+      _syncFieldTextFromSelection();
+      widget.onChanged?.call(tappedItem);
+      focusedIndexNotifier.value = -1;
     }
   }
 
@@ -503,8 +499,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
             }
           },
           LogicalKeySet(LogicalKeyboardKey.enter): () {
-            if (focusedIndexNotifier.value >= 0) {
-              onItemSelected(focusedIndexNotifier.value);
+            if (focusedIndexNotifier.value >= 0 &&
+                focusedIndexNotifier.value < itemsNotifier.value.length) {
+              onItemSelected(itemsNotifier.value[focusedIndexNotifier.value]);
             }
           },
         },
@@ -601,6 +598,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                         validator: widget.validator,
                         onChanged: onChange,
                         onTap: textFiledOnTap,
+                        onFieldSubmitted: (_) {
+                          _dismissOverlay(resetText: true);
+                        },
                       );
                     },
                   ),
