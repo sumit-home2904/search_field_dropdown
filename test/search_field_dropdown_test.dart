@@ -368,6 +368,35 @@ void main() {
     expect(find.byType(Card), findsOneWidget);
   });
 
+  testWidgets(
+      'dropdown remains open during programmatic auto-scroll (e.g. keyboard opening)',
+      (tester) async {
+    final controller = ScrollController();
+    final decoration = SearchFieldDropdownDecoration(
+      parentScrollController: controller,
+      closeDropdownOnParentScroll: true,
+    );
+
+    await tester.pumpWidget(
+      buildScrollableTestApp(
+        controller: controller,
+        decoration: decoration,
+      ),
+    );
+
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Card), findsOneWidget);
+
+    // Programmatic scroll (like keyboard inset adjustment)
+    controller.jumpTo(50);
+    await tester.pumpAndSettle();
+
+    // The dropdown overlay should remain open
+    expect(find.byType(Card), findsOneWidget);
+  });
+
   // ---------------------------------------------------------------
   // Regression: removing a list-row that contains a SearchFieldDropdown
   // used to crash with 'attached: is not true' because the overlay's
@@ -555,5 +584,130 @@ void main() {
 
     expect(find.byType(TextFormField), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dropdownOffset creates spacing when overlay opens above field',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              width: 200,
+              child: SearchFieldDropdown<String>(
+                item: const ['Option 1', 'Option 2'],
+                decoration: const SearchFieldDropdownDecoration(
+                  dropdownOffset: Offset(0, 56),
+                ),
+                listItemBuilder: (ctx, item, sel) => Text(item),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(TextFormField));
+    await tester.pumpAndSettle();
+
+    final fieldBox =
+        tester.renderObject<RenderBox>(find.byType(TextFormField));
+    final cardBox = tester.renderObject<RenderBox>(find.byType(Card));
+
+    final fieldTop = fieldBox.localToGlobal(Offset.zero).dy;
+    final cardBottom =
+        cardBox.localToGlobal(Offset.zero).dy + cardBox.size.height;
+
+    // Card bottom should be above field top
+    expect(cardBottom, lessThan(fieldTop));
+  });
+
+  group('Factory Constructors (singleSelection & multiSelection)', () {
+    testWidgets(
+        'SearchFieldDropdown.singleSelection constructs single-select dropdown and triggers onChanged',
+        (tester) async {
+      String? selectedValue;
+      FocusNode focusNode = FocusNode();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                child: SearchFieldDropdown<String>.singleSelection(
+                  focusNode: focusNode,
+                  item: const ['Apple', 'Banana', 'Cherry'],
+                  initialItem: 'Apple',
+                  onChanged: (val) {
+                    selectedValue = val;
+                  },
+                  listItemBuilder: (ctx, item, isSel) => Text(item),
+                  selectedItemBuilder: (ctx, item) => Text('Selected: $item'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      expect(find.text('Selected: Apple'), findsOneWidget);
+
+      // Open dropdown
+      await tester.tap(find.byType(TextFormField));
+      await tester.pumpAndSettle();
+      expect(focusNode.hasFocus, isTrue);
+
+      // Tap 'Banana'
+      await tester.tap(find.text('Banana'));
+      await tester.pumpAndSettle();
+
+      expect(selectedValue, equals('Banana'));
+      expect(focusNode.hasFocus, isFalse);
+    });
+
+    testWidgets(
+        'SearchFieldDropdown.multiSelection automatically enables multi-select and triggers onItemsChanged',
+        (tester) async {
+      List<String> selectedValues = [];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 200,
+                child: SearchFieldDropdown<String>.multiSelection(
+                  item: const ['Red', 'Green', 'Blue'],
+                  initialItems: const ['Red'],
+                  onItemsChanged: (vals) {
+                    selectedValues = vals;
+                  },
+                  listItemBuilder: (ctx, item, isSel) => Text(item),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Open dropdown
+      await tester.tap(find.byType(TextFormField));
+      await tester.pumpAndSettle();
+
+      // Verify multi-select check icons are rendered (1 checked for 'Red', 2 unchecked for 'Green' & 'Blue')
+      expect(find.byIcon(Icons.check_box), findsOneWidget);
+      expect(find.byIcon(Icons.check_box_outline_blank), findsNWidgets(2));
+
+      // Tap 'Green'
+      await tester.tap(find.text('Green'));
+      await tester.pumpAndSettle();
+
+      expect(selectedValues, equals(['Red', 'Green']));
+    });
   });
 }

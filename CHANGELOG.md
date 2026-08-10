@@ -1,3 +1,10 @@
+# 2.0.0
+- Added `SearchFieldDropdown.singleSelection` & `SearchFieldDropdown.multiSelection` constructors
+- Auto unfocus keyboard on single item selection
+- Fixed overlay placement flicker & keyboard overlap issue
+- Auto API loader state management for `onTap` & `onSearch`
+- Example app updated with 30 country dropdowns list
+
 # 1.2.7
 - Wrong item selection issue fixed
 - Keyboard done action issue fixed

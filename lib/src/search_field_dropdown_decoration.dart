@@ -80,6 +80,7 @@ class SearchFieldDropdownDecoration {
   /// scrolling, which avoids detached overlay menus in long forms/lists.
   final bool? closeDropdownOnParentScroll;
   final Text? errorMessage;
+  final double? errorWidgetHeight;
 
   const SearchFieldDropdownDecoration({
     this.textStyle,
@@ -113,6 +114,7 @@ class SearchFieldDropdownDecoration {
     this.parentScrollController,
     this.closeDropdownOnParentScroll,
     this.errorMessage,
+    this.errorWidgetHeight,
   });
 
   SearchFieldDropdownDecoration copyWith({
@@ -126,6 +128,7 @@ class SearchFieldDropdownDecoration {
     InputDecoration? fieldDecoration,
     EdgeInsetsGeometry? listPadding,
     double? elevation,
+    double? errorWidgetHeight,
     MultiSelectCheckBuilder? multiSelectCheckBuilder,
     IconData? multiSelectCheckedIcon,
     IconData? multiSelectUncheckedIcon,
@@ -154,6 +157,7 @@ class SearchFieldDropdownDecoration {
       cursorHeight: cursorHeight ?? this.cursorHeight,
       cursorWidth: cursorWidth ?? this.cursorWidth,
       cursorRadius: cursorRadius ?? this.cursorRadius,
+      errorWidgetHeight: errorWidgetHeight ?? this.errorWidgetHeight,
       cursorErrorColor: cursorErrorColor ?? this.cursorErrorColor,
       menuDecoration: menuDecoration ?? this.menuDecoration,
       fieldDecoration: fieldDecoration ?? this.fieldDecoration,

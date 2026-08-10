@@ -76,6 +76,10 @@ class DropDownClass extends StatefulWidget {
 class _DropDownClassState extends State<DropDownClass> {
   final countryController = OverlayPortalController();
   List<OverlayPortalController> countryController1 = [];
+  final List<OverlayPortalController> countryController30 =
+      List.generate(30, (_) => OverlayPortalController());
+  final List<CountryModel?> selectedCountryList30 =
+      List.generate(30, (_) => null);
   final stateController = OverlayPortalController();
   final cityController = OverlayPortalController();
   final itemController = OverlayPortalController();
@@ -168,7 +172,7 @@ class _DropDownClassState extends State<DropDownClass> {
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                SearchFieldDropdown<CountryModel>(
+                SearchFieldDropdown<CountryModel>.singleSelection(
                   focusNode: focusNode,
                   enableInteractiveSelection: true,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -255,12 +259,11 @@ class _DropDownClassState extends State<DropDownClass> {
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                SearchFieldDropdown<CityModel>(
+                SearchFieldDropdown<CityModel>.multiSelection(
                   initialItems: selectedMultiCities,
                   controller: multiCityController,
                   item: cityList,
                   decoration: SearchFieldDropdownDecoration(
-                    isMultiSelect: true,
                     showSelectedItemsInField: false,
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),
@@ -347,7 +350,7 @@ class _DropDownClassState extends State<DropDownClass> {
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                SearchFieldDropdown<DummyUserModel>(
+                SearchFieldDropdown<DummyUserModel>.singleSelection(
                   controller: OverlayPortalController(),
                   isApiLoading: false,
                   item: const [],
@@ -427,7 +430,7 @@ class _DropDownClassState extends State<DropDownClass> {
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
-                SearchFieldDropdown<DummyUserModel>(
+                SearchFieldDropdown<DummyUserModel>.multiSelection(
                   initialItems: selectedApiUsers,
                   controller: userApiController,
                   isApiLoading: false,
@@ -462,7 +465,6 @@ class _DropDownClassState extends State<DropDownClass> {
                     });
                   },
                   decoration: SearchFieldDropdownDecoration(
-                    isMultiSelect: true,
                     showSelectedItemsInField: false,
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),

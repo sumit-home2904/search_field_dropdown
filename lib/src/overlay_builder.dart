@@ -17,7 +17,6 @@ class OverlayBuilder<T> extends StatefulWidget {
   final GlobalKey itemListKey;
   final Offset? dropdownOffset;
   final GlobalKey addButtonKey;
-  final double? errorWidgetHeight;
   final Function(int) changeIndex;
   final Function(T) onItemSelected;
   final Function(bool) changeKeyBool;
@@ -39,7 +38,6 @@ class OverlayBuilder<T> extends StatefulWidget {
     this.loaderWidget,
     this.dropdownOffset,
     required this.fieldKey,
-    this.errorWidgetHeight,
     required this.layerLink,
     required this.controller,
     required this.changeIndex,
@@ -84,10 +82,12 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _hoverScrollTimer = SearchTimerMethod(milliseconds: 300);
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncOverlayMetrics();
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncOverlayMetrics();
   }
 
   @override
@@ -116,6 +116,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   }
 
   void _scheduleOverlayMeasurement() {
+    _syncOverlayMetrics();
     if (_measurementScheduled) return;
     _measurementScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,58 +134,81 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
         (isLoading ? 150 : _defaultMaxHeight);
   }
 
-  double calculateMaxHeight(bool isLoading) {
-    final double screen = _availableScreenHeight();
-    final double userMax = _requestedOverlayHeight(isLoading);
-    final double result = (screen > 0 && userMax > screen) ? screen : userMax;
-    return result.clamp(0.0, double.infinity);
-  }
-
-  /// Physical screen space available above or below the field.
-  /// Uses [MediaQuery.viewInsets.bottom] for the REAL keyboard height
-  /// instead of a blanket 40% subtraction.
-  double _availableScreenHeight() {
+  bool computeShouldOpenBottom() {
     final RenderBox? fb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fb == null || !fb.attached) return _requestedOverlayHeight(false);
-    final offset = fb.localToGlobal(Offset.zero);
-    final mq = MediaQuery.of(context);
-    final double keyboardH = mq.viewInsets.bottom;
-    final double usableH = mq.size.height - keyboardH;
-    const double safeMargin = 8.0;
-
-    if (displayOverlayBottomNotifier.value) {
-      // Space from the BOTTOM of the field to the top of keyboard/screen edge
-      final double fieldBottom = offset.dy + fb.size.height;
-      return (usableH - fieldBottom - safeMargin).clamp(0.0, double.infinity);
-    } else {
-      // Space from screen top to the TOP of the field
-      return (offset.dy - safeMargin).clamp(0.0, double.infinity);
-    }
-  }
-
-  /// Determine whether dropdown opens below or above the text field.
-  /// Uses the field's actual position + keyboard-aware usable height.
-  void checkRenderObjects() {
-    if (!mounted) return;
-    final RenderBox? fb =
-        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
-    if (fb == null || !fb.attached) return;
+    if (fb == null || !fb.attached) return true;
 
     final mq = MediaQuery.of(context);
-    final double keyboardH = mq.viewInsets.bottom;
+    final bool isReadOnly = (widget.decoration?.readOnly ?? false) ||
+        (widget.decoration?.fieldReadOnly ?? false);
+
+    // If text field is editable, account for soft keyboard height (~280px)
+    // even before viewInsets.bottom updates so overlay opens above instead of
+    // getting covered when keyboard slides up.
+    final double keyboardH = mq.viewInsets.bottom > 0
+        ? mq.viewInsets.bottom
+        : (isReadOnly ? 0.0 : 280.0);
+
     final double usableH = mq.size.height - keyboardH;
     final offset = fb.localToGlobal(Offset.zero);
     final double fieldBottom = offset.dy + fb.size.height;
 
     final double spaceBelow = usableH - fieldBottom;
     final double spaceAbove = offset.dy;
-    // Use the INTENDED max height (not the screen-capped value) so the
-    // above/below decision reflects the user's desired dropdown size.
     final double intended = _requestedOverlayHeight(false);
 
-    // Open below if enough space; otherwise open above (like a native select)
-    final bool newBottom = spaceBelow >= intended || spaceBelow >= spaceAbove;
+    return spaceBelow >= intended || spaceBelow >= spaceAbove;
+  }
+
+  double calculateMaxHeight(bool isLoading, bool isBottom) {
+    final double screen = _availableScreenHeight(isBottom);
+    final double userMax = _requestedOverlayHeight(isLoading);
+    final double result = (screen > 0 && userMax > screen) ? screen : userMax;
+    return result.clamp(0.0, double.infinity);
+  }
+
+  /// Physical screen space available above or below the field.
+  double _availableScreenHeight(bool isBottom) {
+    final RenderBox? fb =
+        widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (fb == null || !fb.attached) return _requestedOverlayHeight(false);
+    final offset = fb.localToGlobal(Offset.zero);
+    final mq = MediaQuery.of(context);
+    final bool isReadOnly = (widget.decoration?.readOnly ?? false) ||
+        (widget.decoration?.fieldReadOnly ?? false);
+    final double keyboardH = mq.viewInsets.bottom > 0
+        ? mq.viewInsets.bottom
+        : (isReadOnly ? 0.0 : 280.0);
+    final double usableH = mq.size.height - keyboardH;
+    const double safeMargin = 8.0;
+
+    final double fieldH = fb.size.height;
+    double gap = 0.0;
+    if (widget.dropdownOffset != null) {
+      final double userDy = widget.dropdownOffset!.dy;
+      if (userDy > fieldH) {
+        gap = userDy - fieldH;
+      } else if (userDy < 0) {
+        gap = userDy.abs();
+      }
+    }
+
+    if (isBottom) {
+      // Space from the BOTTOM of the field to top of keyboard
+      final double fieldBottom = offset.dy + fieldH;
+      return (usableH - fieldBottom - safeMargin - gap)
+          .clamp(0.0, double.infinity);
+    } else {
+      // Space from screen top to the TOP of the field
+      return (offset.dy - safeMargin - gap).clamp(0.0, double.infinity);
+    }
+  }
+
+  /// Determine whether dropdown opens below or above the text field.
+  void checkRenderObjects() {
+    if (!mounted) return;
+    final bool newBottom = computeShouldOpenBottom();
 
     if (newBottom != displayOverlayBottomNotifier.value) {
       displayOverlayBottomNotifier.value = newBottom;
@@ -194,15 +218,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   @override
   void didUpdateWidget(covariant OverlayBuilder<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.decoration?.canShowButton !=
-        widget.decoration?.canShowButton) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _scheduleOverlayMeasurement();
-        }
-      });
-    }
+    _scheduleOverlayMeasurement();
   }
 
   @override
@@ -214,12 +230,36 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     super.dispose();
   }
 
+  Offset setOffset(bool isBottom) {
+    final double dx = widget.dropdownOffset?.dx ?? 0;
+    if (isBottom) {
+      final double dy = widget.dropdownOffset?.dy ?? fieldHeightNotifier.value;
+      return Offset(dx, dy);
+    } else {
+      final double fieldH = fieldHeightNotifier.value;
+      double dy = 0;
+      if (widget.dropdownOffset != null) {
+        final double userDy = widget.dropdownOffset!.dy;
+        if (userDy >= fieldH) {
+          dy = -(userDy - fieldH);
+        } else if (userDy < 0) {
+          dy = userDy;
+        } else if (userDy > 0 && userDy < fieldH) {
+          dy = -userDy;
+        }
+      }
+      return Offset(dx, dy);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    _scheduleOverlayMeasurement();
+    _measureField();
     final RenderBox? fieldRb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (fieldRb == null || !fieldRb.attached) return const SizedBox.shrink();
+
+    final bool isBottom = computeShouldOpenBottom();
 
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -232,9 +272,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
         fieldWidthNotifier,
       ]),
       builder: (context, child) {
-        // Re-check attachment inside the builder callback — the render
-        // object may have been detached between the outer build() and
-        // this callback (e.g. when a DataTable row is removed).
+        // Re-check attachment inside the builder callback
         final RenderBox? rb =
             widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
         if (rb == null || !rb.attached) return const SizedBox.shrink();
@@ -244,7 +282,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
         final fIndex = widget.focusedIndexNotifier.value;
         final sItems = widget.selectedItemsNotifier.value;
 
-        final double maxH = calculateMaxHeight(isLoading);
+        final double maxH = calculateMaxHeight(isLoading, isBottom);
         final double w = fieldWidthNotifier.value > 0
             ? fieldWidthNotifier.value
             : fieldRb.size.width;
@@ -259,8 +297,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
             child: CompositedTransformFollower(
               link: widget.layerLink,
               showWhenUnlinked: false,
-              offset: setOffset(),
-              followerAnchor: displayOverlayBottomNotifier.value
+              offset: setOffset(isBottom),
+              followerAnchor: isBottom
                   ? Alignment.topLeft
                   : Alignment.bottomLeft,
               child: ConstrainedBox(
@@ -440,28 +478,14 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
         color: Colors.grey, borderRadius: BorderRadius.circular(5));
   }
 
-  Offset setOffset() {
-    final double dx = widget.dropdownOffset?.dx ?? 0;
-    if (displayOverlayBottomNotifier.value) {
-      // Below: position the overlay starting at the field's bottom edge.
-      // Use actual field height so no magic numbers are needed.
-      final double dy = widget.dropdownOffset?.dy ?? fieldHeightNotifier.value;
-      return Offset(dx, dy);
-    } else {
-      // Above: followerAnchor=bottomLeft so overlay bottom aligns to
-      // the target's origin (field top-left). No dy offset needed.
-      return Offset(dx, 0);
-    }
-  }
-
   Widget emptyErrorWidget() {
     return Container(
       key: errorButtonKey,
       child: SizedBox(
-        height: widget.errorWidgetHeight ?? 150,
+        height: widget.decoration?.errorWidgetHeight ?? 60,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (widget.decoration?.canShowButton ?? false)
               if (widget.addButton != null)

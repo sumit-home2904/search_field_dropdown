@@ -12,10 +12,12 @@ SearchFieldDropdown widget implementation in Flutter. This widget provides a cus
 
 <img src="https://raw.githubusercontent.com/sumit-home2904/search_field_dropdown/master/search_field_dropdown.gif">
 
----
-
 ## ✨ Features
 
+- **Named Factory Constructors**: Dedicated `SearchFieldDropdown.singleSelection` and `SearchFieldDropdown.multiSelection` constructors for clean, mode-focused parameter auto-complete without needing `isMultiSelect` boolean flags.
+- **Automatic Focus Dismissal**: Auto-unfocuses text field and closes soft keyboard when an item is selected in single selection mode.
+- **Soft Keyboard Awareness**: Dynamically predicts soft keyboard height so overlay menus near the bottom of the screen open above the text field immediately instead of getting covered when the keyboard slides up.
+- **Automatic API Loader**: Automatically toggles `isApiLoading` state during `onTap` and `onSearch` execution and displays `loaderWidget` or progress indicator.
 - **Static & Dynamic Data**: Display static items or fetch them dynamically via APIs.
 - **Single & Multi-Select**: Support for Single-Select and Multi-Select dropdowns with native checkboxes & external display chip builders.
 - **High Customizability**: Fully customizable dropdown appearance using `SearchFieldDropdownDecoration` and custom item builders.
@@ -31,7 +33,7 @@ SearchFieldDropdown widget implementation in Flutter. This widget provides a cus
 
 ```yaml
 dependencies:
-  search_field_dropdown: ^1.2.6
+  search_field_dropdown: ^2.0.0
 ```
 
 2. Import the package and use it in your Flutter App.
@@ -44,7 +46,7 @@ import 'package:search_field_dropdown/search_field_dropdown.dart';
 
 ## 📖 Example Usage
 
-### 1. Basic SearchFieldDropdown
+### 1. Basic SearchFieldDropdown (Single Selection)
 
 A `GlobalKey<SearchFieldDropdownState>` is used to uniquely identify and manage the state of a SearchFieldDropdown widget, allowing you to interact with its internal state (e.g., selecting an item or retrieving the selected value) from outside the widget.
 
@@ -58,7 +60,7 @@ class DropDownClass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SearchFieldDropdown<String>(
+      body: SearchFieldDropdown<String>.singleSelection(
         key: dropdownKey, // Attach the GlobalKey to the widget
         item: itemList,
         onChanged: (value) {
@@ -90,7 +92,7 @@ class DropDownClass extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          SearchFieldDropdown<String>(
+          SearchFieldDropdown<String>.singleSelection(
             item : itemList,
             controller: itemController,
             addButton:  InkWell(
@@ -98,12 +100,6 @@ class DropDownClass extends StatelessWidget {
                 // Add your custom event here
               },
               child: Container(
-                height: 40,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(2),
-                ),
                 child: const Row(
                   children: [
                     Expanded(
@@ -182,7 +178,7 @@ class ItemModel {
 
 ### 4. SearchFieldDropdown with Dynamic Search or API Integration
 
-Advanced usage example for fetching dropdown items dynamically from an API.
+Advanced usage example for fetching dropdown items dynamically from an API with automatic loading indicators.
 
 ```dart
 class DropDownClass extends StatelessWidget {
@@ -193,25 +189,31 @@ class DropDownClass extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          SearchFieldDropdown<String>(
+          SearchFieldDropdown<String>.singleSelection(
             controller: itemController,
             initialItem: selectedItem,
-            item : itemList,
+            item: const [],
             onTap: () async {
               // Example API call, or return your API list.
               return itemList;
             },
-            decoration: SearchFieldDropdownDecoration(
-                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-                fieldDecoration: const InputDecoration(),
-            ),
-            onChanged: (String? value) {},
             onSearch: (value) async {
               // Fetch API data and filter here
               return itemList.where((element) {
                 return element.toLowerCase().contains(value.toLowerCase());
               }).toList();
             },
+            loaderWidget: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(12.0),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            decoration: SearchFieldDropdownDecoration(
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
+                fieldDecoration: const InputDecoration(hintText: "Search remote items..."),
+            ),
+            onChanged: (String? value) {},
             listItemBuilder: (context, item, isSelected) {
               return Text(
                 item,
@@ -232,15 +234,14 @@ class DropDownClass extends StatelessWidget {
 
 ### 5. Multi-Select SearchFieldDropdown
 
-Advanced usage example featuring multi-select configurations, custom selection parsing, and outer UI chips display integration.
+Advanced usage example featuring `SearchFieldDropdown.multiSelection`, custom selection parsing, and outer UI chips display integration.
 
 ```dart
-SearchFieldDropdown<String>(
+SearchFieldDropdown<String>.multiSelection(
   initialItems: const [],
   item: const ['Apple', 'Banana', 'Orange', 'Mango'],
   controller: itemController,
   decoration: SearchFieldDropdownDecoration(
-      isMultiSelect: true,
       showSelectedItemsInField: false,
       textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
       fieldDecoration: const InputDecoration(hintText: "Select multiple fruits"),

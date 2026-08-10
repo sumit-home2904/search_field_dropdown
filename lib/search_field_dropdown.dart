@@ -4,6 +4,7 @@ export 'src/signatures.dart';
 export 'src/search_field_dropdown_decoration.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:search_field_dropdown/src/overlay_builder.dart';
 import 'package:search_field_dropdown/src/search_field_dropdown_decoration.dart';
@@ -12,9 +13,6 @@ import 'package:search_field_dropdown/src/signatures.dart';
 class SearchFieldDropdown<T> extends StatefulWidget {
   /// List of items to display in the dropdown.
   final List<T> item;
-
-  final double? errorWidgetHeight;
-
   /// When you have text fields, users can usually long-press to select text,
   /// which brings up the toolbar with options like copy, paste, etc.
   final bool? enableInteractiveSelection;
@@ -94,7 +92,6 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     this.loaderWidget,
     required this.item,
     this.inputFormatters,
-    this.errorWidgetHeight,
     this.autovalidateMode,
     this.onChanged,
     this.onItemsChanged,
@@ -108,6 +105,108 @@ class SearchFieldDropdown<T> extends StatefulWidget {
     this.enableInteractiveSelection,
     this.decoration,
   });
+
+  /// Creates a single-selection search field dropdown.
+  ///
+  /// Automatically configures single-select mode without needing to explicitly
+  /// set `isMultiSelect: false` in [decoration].
+  factory SearchFieldDropdown.singleSelection({
+    Key? key,
+    required List<T> item,
+    required ListItemBuilder<T> listItemBuilder,
+    T? initialItem,
+    Function(T? value)? onChanged,
+    SelectedItemBuilder<T>? selectedItemBuilder,
+    Future<List<T>> Function()? onTap,
+    Future<List<T>> Function(String value)? onSearch,
+    FocusNode? focusNode,
+    Widget? addButton,
+    String? Function(String? value)? validator,
+    Widget? loaderWidget,
+    List<TextInputFormatter>? inputFormatters,
+    AutovalidateMode? autovalidateMode,
+    OverlayPortalController? controller,
+    bool isApiLoading = false,
+    bool? enableInteractiveSelection,
+    SearchFieldDropdownDecoration? decoration,
+  }) {
+    return SearchFieldDropdown<T>(
+      key: key,
+      item: item,
+      listItemBuilder: listItemBuilder,
+      initialItem: initialItem,
+      onChanged: onChanged,
+      selectedItemBuilder: selectedItemBuilder,
+      onTap: onTap,
+      onSearch: onSearch,
+      focusNode: focusNode,
+      addButton: addButton,
+      validator: validator,
+      loaderWidget: loaderWidget,
+      inputFormatters: inputFormatters,
+      autovalidateMode: autovalidateMode,
+      controller: controller,
+      isApiLoading: isApiLoading,
+      enableInteractiveSelection: enableInteractiveSelection,
+      decoration: (decoration ?? const SearchFieldDropdownDecoration()).copyWith(
+        isMultiSelect: false,
+      ),
+    );
+  }
+
+  /// Creates a multi-selection search field dropdown.
+  ///
+  /// Automatically configures multi-select mode (`isMultiSelect: true`) in
+  /// [decoration] and exposes multi-select specific properties.
+  factory SearchFieldDropdown.multiSelection({
+    Key? key,
+    required List<T> item,
+    required ListItemBuilder<T> listItemBuilder,
+    List<T>? initialItems,
+    Function(T? value)? onChanged,
+    Function(List<T>)? onItemsChanged,
+    SelectedItemBuilder<T>? selectedItemBuilder,
+    SelectedItemsBuilder<T>? selectedItemsBuilder,
+    MultiSelectDisplayBuilder<T>? multiSelectDisplayBuilder,
+    Future<List<T>> Function()? onTap,
+    Future<List<T>> Function(String value)? onSearch,
+    FocusNode? focusNode,
+    Widget? addButton,
+    String? Function(String? value)? validator,
+    Widget? loaderWidget,
+    List<TextInputFormatter>? inputFormatters,
+    AutovalidateMode? autovalidateMode,
+    OverlayPortalController? controller,
+    bool isApiLoading = false,
+    bool? enableInteractiveSelection,
+    SearchFieldDropdownDecoration? decoration,
+  }) {
+    return SearchFieldDropdown<T>(
+      key: key,
+      item: item,
+      listItemBuilder: listItemBuilder,
+      initialItems: initialItems,
+      onChanged: onChanged,
+      onItemsChanged: onItemsChanged,
+      selectedItemBuilder: selectedItemBuilder,
+      selectedItemsBuilder: selectedItemsBuilder,
+      multiSelectDisplayBuilder: multiSelectDisplayBuilder,
+      onTap: onTap,
+      onSearch: onSearch,
+      focusNode: focusNode,
+      addButton: addButton,
+      validator: validator,
+      loaderWidget: loaderWidget,
+      inputFormatters: inputFormatters,
+      autovalidateMode: autovalidateMode,
+      controller: controller,
+      isApiLoading: isApiLoading,
+      enableInteractiveSelection: enableInteractiveSelection,
+      decoration: (decoration ?? const SearchFieldDropdownDecoration()).copyWith(
+        isMultiSelect: true,
+      ),
+    );
+  }
 
   @override
   State<SearchFieldDropdown<T>> createState() => SearchFieldDropdownState<T>();
@@ -259,7 +358,9 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
         !_overlayController.isShowing) {
       return;
     }
-    _dismissOverlay(resetText: true);
+    if (position.userScrollDirection != ScrollDirection.idle) {
+      _dismissOverlay(resetText: true);
+    }
   }
 
   void _restoreFieldValueAfterDismiss() {
@@ -287,7 +388,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
           baseOffset: 0,
           extentOffset: textController.text.length,
         );
-        itemsNotifier.value = await widget.onTap!();
+        isApiLoadingNotifier.value = true;
+        try {
+          itemsNotifier.value = await widget.onTap!();
+        } finally {
+          if (mounted) {
+            isApiLoadingNotifier.value = widget.isApiLoading;
+          }
+        }
       }
       if (mounted) {
         focusedIndexNotifier.value = _overlayController.isShowing ? 0 : -1;
@@ -455,6 +563,10 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
       _syncFieldTextFromSelection();
       widget.onChanged?.call(tappedItem);
       focusedIndexNotifier.value = -1;
+      widget.focusNode?.unfocus();
+      if (mounted) {
+        FocusScope.of(context).unfocus();
+      }
     }
   }
 
@@ -553,7 +665,6 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
                       isApiLoadingNotifier: isApiLoadingNotifier,
                       loaderWidget: widget.loaderWidget,
                       listItemBuilder: widget.listItemBuilder,
-                      errorWidgetHeight: widget.errorWidgetHeight,
                     ),
                   ],
                 );
@@ -636,7 +747,14 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
     if (!_readOnly) {
       _showOverlay();
       if (widget.onTap != null && widget.focusNode == null) {
-        itemsNotifier.value = await widget.onTap!();
+        isApiLoadingNotifier.value = true;
+        try {
+          itemsNotifier.value = await widget.onTap!();
+        } finally {
+          if (mounted) {
+            isApiLoadingNotifier.value = widget.isApiLoading;
+          }
+        }
       } else if (widget.onTap == null) {
         // Local list mode: always reset to full list on re-open so previous
         // search results don't persist after the dropdown was dismissed.
@@ -667,9 +785,16 @@ class SearchFieldDropdownState<T> extends State<SearchFieldDropdown<T>> {
   /// Calls onSearch if provided.
   onSearchCalled(String value) async {
     if (widget.onSearch != null) {
-      final result = await widget.onSearch!(value);
-      if (mounted) {
-        itemsNotifier.value = result;
+      isApiLoadingNotifier.value = true;
+      try {
+        final result = await widget.onSearch!(value);
+        if (mounted) {
+          itemsNotifier.value = result;
+        }
+      } finally {
+        if (mounted) {
+          isApiLoadingNotifier.value = widget.isApiLoading;
+        }
       }
     } else {
       itemsNotifier.value = widget.item.where((item) {
