@@ -298,9 +298,8 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
               link: widget.layerLink,
               showWhenUnlinked: false,
               offset: setOffset(isBottom),
-              followerAnchor: isBottom
-                  ? Alignment.topLeft
-                  : Alignment.bottomLeft,
+              followerAnchor:
+                  isBottom ? Alignment.topLeft : Alignment.bottomLeft,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: maxH),
                 child: SizedBox(

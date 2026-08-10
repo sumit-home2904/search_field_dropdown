@@ -611,8 +611,7 @@ void main() {
     await tester.tap(find.byType(TextFormField));
     await tester.pumpAndSettle();
 
-    final fieldBox =
-        tester.renderObject<RenderBox>(find.byType(TextFormField));
+    final fieldBox = tester.renderObject<RenderBox>(find.byType(TextFormField));
     final cardBox = tester.renderObject<RenderBox>(find.byType(Card));
 
     final fieldTop = fieldBox.localToGlobal(Offset.zero).dy;

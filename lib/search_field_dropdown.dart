@@ -13,6 +13,7 @@ import 'package:search_field_dropdown/src/signatures.dart';
 class SearchFieldDropdown<T> extends StatefulWidget {
   /// List of items to display in the dropdown.
   final List<T> item;
+
   /// When you have text fields, users can usually long-press to select text,
   /// which brings up the toolbar with options like copy, paste, etc.
   final bool? enableInteractiveSelection;
@@ -148,7 +149,8 @@ class SearchFieldDropdown<T> extends StatefulWidget {
       controller: controller,
       isApiLoading: isApiLoading,
       enableInteractiveSelection: enableInteractiveSelection,
-      decoration: (decoration ?? const SearchFieldDropdownDecoration()).copyWith(
+      decoration:
+          (decoration ?? const SearchFieldDropdownDecoration()).copyWith(
         isMultiSelect: false,
       ),
     );
@@ -202,7 +204,8 @@ class SearchFieldDropdown<T> extends StatefulWidget {
       controller: controller,
       isApiLoading: isApiLoading,
       enableInteractiveSelection: enableInteractiveSelection,
-      decoration: (decoration ?? const SearchFieldDropdownDecoration()).copyWith(
+      decoration:
+          (decoration ?? const SearchFieldDropdownDecoration()).copyWith(
         isMultiSelect: true,
       ),
     );
