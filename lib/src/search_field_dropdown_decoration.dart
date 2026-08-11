@@ -1,85 +1,102 @@
 import 'package:flutter/material.dart';
-import 'package:search_field_dropdown/src/signatures.dart';
 
+/// Styling and visual decoration configuration for [SearchFieldDropdown].
+///
+/// Encapsulates styling for the text input field, dropdown menu container,
+/// list item rows, elevation, cursor, and overlay layout behavior.
 class SearchFieldDropdownDecoration {
-  /// Use this to style your search or selected text.
+  // ===========================================================================
+  // TEXT FIELD STYLING PROPERTIES
+  // ===========================================================================
+
+  /// Custom text style for text typed inside the search field or displayed values.
   final TextStyle? textStyle;
 
-  /// Call when you need to change cursor color.
-  final Color? cursorColor;
-
-  /// Call when you need to change cursor Height.
-  final double? cursorHeight;
-
-  /// Call when you need to change cursor Width.
-  final double? cursorWidth;
-
-  /// Call when you need to change cursor Radius.
-  final Radius? cursorRadius;
-
-  /// Call when you need to change cursor Error Color.
-  final Color? cursorErrorColor;
-
-  /// Give your drop-down a custom decoration style.
-  final BoxDecoration? menuDecoration;
-
-  /// Creates a [TextFormField] with an [InputDecoration].
+  /// Custom decoration for the internal [TextFormField] (border, hintText, prefix/suffix icons).
   final InputDecoration? fieldDecoration;
 
-  /// Call for [listPadding] to provide padding for the list view.
+  /// Text alignment inside the search field.
+  final TextAlign? textAlign;
+
+  /// Keyboard input type for the search input field.
+  final TextInputType? keyboardType;
+
+  /// Controls cursor visibility inside the search field.
+  final bool? showCursor;
+
+  /// Color of the blinking insertion cursor.
+  final Color? cursorColor;
+
+  /// Height of the insertion cursor.
+  final double? cursorHeight;
+
+  /// Width of the insertion cursor.
+  final double? cursorWidth;
+
+  /// Border radius of the insertion cursor corners.
+  final Radius? cursorRadius;
+
+  /// Color of the insertion cursor when the form field displays an error.
+  final Color? cursorErrorColor;
+
+  // ===========================================================================
+  // OVERLAY MENU & CONTAINER STYLING PROPERTIES
+  // ===========================================================================
+
+  /// Custom container decoration for the open overlay menu card (background, border, shadow).
+  final BoxDecoration? menuDecoration;
+
+  /// Padding applied around the list view inside the overlay menu.
   final EdgeInsetsGeometry? listPadding;
 
+  /// Card elevation / shadow depth for the dropdown overlay container.
   final double? elevation;
 
-  /// Optional custom trailing widget for each multi-select row.
-  ///
-  /// This is a visual builder only; the dropdown still toggles selection from
-  /// the row tap so teams have a single selection path to debug.
-  final MultiSelectCheckBuilder? multiSelectCheckBuilder;
-  final IconData? multiSelectCheckedIcon;
-  final IconData? multiSelectUncheckedIcon;
-  final Color? multiSelectCheckedIconColor;
-  final Color? multiSelectUncheckedIconColor;
+  /// Max height cap for the dropdown overlay menu.
+  final double? overlayHeight;
 
-  /// Supply a decoration (like a background color or border) when the item is focused/hovered.
-  /// This expands across the entire row including native checkboxes.
-  final BoxDecoration? focusedItemDecoration;
-
-  /// Supply a decoration when the item is not focused.
-  final BoxDecoration? unfocusedItemDecoration;
-
-  /// Set the overall unified row padding encapsulating the list item and checkbox natively.
-  final EdgeInsetsGeometry? itemPadding;
-
-  /// Enables rendering of the optional [SearchFieldDropdown.addButton]
-  /// section above the list inside the overlay.
-  final bool? canShowButton;
+  /// Positional offset (dx, dy) applied to the overlay menu relative to the target field.
   final Offset? dropdownOffset;
 
-  /// Turns on multi-select mode for the entire dropdown flow.
-  ///
-  /// This flag affects selection bookkeeping in `SearchFieldDropdownState`
-  /// and row rendering inside `OverlayBuilder`, so keep it in decoration as
-  /// the single source of truth for multi-select visuals and behavior.
-  final bool? isMultiSelect;
-  final double? overlayHeight;
-  final TextAlign? textAlign;
-  final TextInputType? keyboardType;
-  final bool? showCursor;
+  // ===========================================================================
+  // LIST ITEM ROW STYLING PROPERTIES
+  // ===========================================================================
+
+  /// Visual decoration applied to an item row when focused via keyboard arrow keys or hovered.
+  final BoxDecoration? focusedItemDecoration;
+
+  /// Visual decoration applied to an item row when unfocused.
+  final BoxDecoration? unfocusedItemDecoration;
+
+  /// Padding applied inside each individual item row container.
+  final EdgeInsetsGeometry? itemPadding;
+
+  // ===========================================================================
+  // BEHAVIORAL & SCROLL CONTROL PROPERTIES
+  // ===========================================================================
+
+  /// Enables rendering of the optional [SearchFieldDropdown.addButton] above the list items.
+  final bool? canShowButton;
+
+  /// Controls whether selected multi-select items are rendered inside the search field as text.
   final bool? showSelectedItemsInField;
 
+  /// Disables both text input and dropdown opening.
   final bool? readOnly;
+
+  /// Disables text typing while still allowing the dropdown menu to open on tap.
   final bool? fieldReadOnly;
 
-  /// Supply the surrounding scroll controller when the dropdown is hosted
-  /// inside a parent ListView/SingleChildScrollView and you want scroll-aware
-  /// auto-dismiss behaviour to be deterministic.
+  /// Explicit parent scroll controller for deterministic scroll-aware auto-dismiss.
   final ScrollController? parentScrollController;
 
-  /// Closes the open dropdown when the surrounding parent scrollable starts
-  /// scrolling, which avoids detached overlay menus in long forms/lists.
+  /// Automatically closes the dropdown menu when surrounding parent scrollable starts scrolling.
   final bool? closeDropdownOnParentScroll;
+
+  /// Custom empty/error message text widget displayed when item list is empty.
   final Text? errorMessage;
+
+  /// Height of the empty error message container.
   final double? errorWidgetHeight;
 
   const SearchFieldDropdownDecoration({
@@ -93,17 +110,11 @@ class SearchFieldDropdownDecoration {
     this.fieldDecoration,
     this.listPadding,
     this.elevation,
-    this.multiSelectCheckBuilder,
-    this.multiSelectCheckedIcon,
-    this.multiSelectUncheckedIcon,
-    this.multiSelectCheckedIconColor,
-    this.multiSelectUncheckedIconColor,
     this.focusedItemDecoration,
     this.unfocusedItemDecoration,
     this.itemPadding,
     this.canShowButton,
     this.dropdownOffset,
-    this.isMultiSelect,
     this.overlayHeight,
     this.textAlign,
     this.keyboardType,
@@ -117,6 +128,7 @@ class SearchFieldDropdownDecoration {
     this.errorWidgetHeight,
   });
 
+  /// Creates a copy of this decoration with the given fields replaced with new values.
   SearchFieldDropdownDecoration copyWith({
     TextStyle? textStyle,
     Color? cursorColor,
@@ -129,17 +141,11 @@ class SearchFieldDropdownDecoration {
     EdgeInsetsGeometry? listPadding,
     double? elevation,
     double? errorWidgetHeight,
-    MultiSelectCheckBuilder? multiSelectCheckBuilder,
-    IconData? multiSelectCheckedIcon,
-    IconData? multiSelectUncheckedIcon,
-    Color? multiSelectCheckedIconColor,
-    Color? multiSelectUncheckedIconColor,
     BoxDecoration? focusedItemDecoration,
     BoxDecoration? unfocusedItemDecoration,
     EdgeInsetsGeometry? itemPadding,
     bool? canShowButton,
     Offset? dropdownOffset,
-    bool? isMultiSelect,
     double? overlayHeight,
     TextAlign? textAlign,
     TextInputType? keyboardType,
@@ -163,16 +169,6 @@ class SearchFieldDropdownDecoration {
       fieldDecoration: fieldDecoration ?? this.fieldDecoration,
       listPadding: listPadding ?? this.listPadding,
       elevation: elevation ?? this.elevation,
-      multiSelectCheckBuilder:
-          multiSelectCheckBuilder ?? this.multiSelectCheckBuilder,
-      multiSelectCheckedIcon:
-          multiSelectCheckedIcon ?? this.multiSelectCheckedIcon,
-      multiSelectUncheckedIcon:
-          multiSelectUncheckedIcon ?? this.multiSelectUncheckedIcon,
-      multiSelectCheckedIconColor:
-          multiSelectCheckedIconColor ?? this.multiSelectCheckedIconColor,
-      multiSelectUncheckedIconColor:
-          multiSelectUncheckedIconColor ?? this.multiSelectUncheckedIconColor,
       focusedItemDecoration:
           focusedItemDecoration ?? this.focusedItemDecoration,
       unfocusedItemDecoration:
@@ -180,7 +176,6 @@ class SearchFieldDropdownDecoration {
       itemPadding: itemPadding ?? this.itemPadding,
       canShowButton: canShowButton ?? this.canShowButton,
       dropdownOffset: dropdownOffset ?? this.dropdownOffset,
-      isMultiSelect: isMultiSelect ?? this.isMultiSelect,
       overlayHeight: overlayHeight ?? this.overlayHeight,
       textAlign: textAlign ?? this.textAlign,
       keyboardType: keyboardType ?? this.keyboardType,

@@ -1,36 +1,37 @@
 import 'package:flutter/material.dart';
 
-/// Builds each row inside the overlay list.
+/// Callback typedef for building each row widget inside the overlay menu list.
 ///
-/// The third argument represents the currently active row used for keyboard
-/// navigation / hover styling. In multi-select mode, the actual checked state
-/// is exposed through `multiSelectCheckBuilder`.
+/// Parameters:
+/// - [context]: BuildContext from the row builder.
+/// - [item]: The generic item of type [T] to render.
+/// - [isSelected]: Boolean indicating whether the row is currently focused via keyboard or hovered by mouse.
 typedef ListItemBuilder<T> = Widget Function(
   BuildContext context,
   T item,
   bool isSelected,
 );
 
-typedef SelectedItemBuilder<T> = Text Function(BuildContext context, T item);
+/// Callback typedef for converting a single selected item into a [Text] widget inside the search field.
+typedef SelectedItemBuilder<T> = Text Function(
+  BuildContext context,
+  T item,
+);
 
+/// Callback typedef for formatting multiple selected items into a single display string for the search field.
 typedef SelectedItemsBuilder<T> = String Function(
   BuildContext context,
   List<T> items,
 );
 
+/// Callback typedef for building a custom widget area below the search field displaying multi-select tags/chips.
+///
+/// Parameters:
+/// - [context]: BuildContext for tag rendering.
+/// - [items]: Currently selected items list.
+/// - [onRemove]: Function callback to invoke when user removes a specific selected item tag.
 typedef MultiSelectDisplayBuilder<T> = Widget Function(
   BuildContext context,
   List<T> items,
   Function(T) onRemove,
-);
-
-/// Builds the trailing selection indicator for a multi-select row.
-///
-/// The builder receives only the current selected state. Selection changes are
-/// still driven by the row tap handled inside `SearchFieldDropdown`, so this
-/// builder is best used for presentation unless you wire custom tap behavior
-/// around the whole row yourself.
-typedef MultiSelectCheckBuilder = Widget Function(
-  BuildContext context,
-  bool selected,
 );

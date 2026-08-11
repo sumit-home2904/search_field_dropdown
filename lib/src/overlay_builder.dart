@@ -4,10 +4,10 @@ import 'package:search_field_dropdown/src/signatures.dart';
 import 'package:search_field_dropdown/src/animated_section.dart';
 import 'package:search_field_dropdown/src/search_field_dropdown_decoration.dart';
 
-/// Pure overlay renderer for the dropdown.
+/// Pure visual overlay renderer for [SearchFieldDropdown].
 ///
-/// All selection mutations stay in `SearchFieldDropdownState`; this widget
-/// only reflects the current notifiers and forwards row taps back upward.
+/// Handles overlay positioning, dynamic height calculation (avoiding soft keyboards),
+/// animated expansion, and performance-isolated row item building via [_DropdownListItemTile].
 class OverlayBuilder<T> extends StatefulWidget {
   final Widget? addButton;
   final bool isMultiSelect;
@@ -62,20 +62,33 @@ class OverlayBuilder<T> extends StatefulWidget {
 
 class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     with WidgetsBindingObserver {
+  // ===========================================================================
+  // OVERLAY METRICS & NOTIFIERS
+  // ===========================================================================
+
+  /// Tracks whether dropdown opens below (`true`) or above (`false`) the text field.
   final ValueNotifier<bool> displayOverlayBottomNotifier =
       ValueNotifier<bool>(true);
 
   final GlobalKey errorButtonKey = GlobalKey();
-  final key1 = GlobalKey(), key2 = GlobalKey();
+  final GlobalKey key1 = GlobalKey(), key2 = GlobalKey();
 
-  // Cached measurements updated after each frame
-  final ValueNotifier<double> fieldHeightNotifier =
-      ValueNotifier<double>(56); // actual rendered height of the trigger field
+  /// Actual rendered height of the target text field.
+  final ValueNotifier<double> fieldHeightNotifier = ValueNotifier<double>(56);
+
+  /// Actual rendered width of the target text field.
   final ValueNotifier<double> fieldWidthNotifier = ValueNotifier<double>(0);
 
-  /// Reusable timer for scroll-hover index tracking — prevents per-event allocations
+  /// Reusable timer for scroll-hover index tracking — prevents per-event allocations.
   late final SearchTimerMethod _hoverScrollTimer;
   bool _measurementScheduled = false;
+
+  /// Default max overlay height when not overridden in decoration.
+  static const double _defaultMaxHeight = 250.0;
+
+  // ===========================================================================
+  // LIFECYCLE HOOKS
+  // ===========================================================================
 
   @override
   void initState() {
@@ -95,7 +108,26 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     _scheduleOverlayMeasurement();
   }
 
-  /// Measure the trigger field height so offsets use the real value.
+  @override
+  void didUpdateWidget(covariant OverlayBuilder<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _scheduleOverlayMeasurement();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    displayOverlayBottomNotifier.dispose();
+    fieldHeightNotifier.dispose();
+    fieldWidthNotifier.dispose();
+    super.dispose();
+  }
+
+  // ===========================================================================
+  // OVERLAY MEASUREMENT & POSITION CALCULATIONS
+  // ===========================================================================
+
+  /// Measures the target field dimensions so follower offset uses exact pixels.
   void _measureField() {
     if (!mounted) return;
     final fb = widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -126,14 +158,14 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     });
   }
 
-  /// Default max height when user does not provide [overlayHeight].
-  static const double _defaultMaxHeight = 250.0;
-
   double _requestedOverlayHeight(bool isLoading) {
     return widget.decoration?.overlayHeight ??
         (isLoading ? 150 : _defaultMaxHeight);
   }
 
+  /// Determines whether there is sufficient space to open the overlay below the field.
+  ///
+  /// Takes soft keyboard height (~280px) into account so menu flips upward if necessary.
   bool computeShouldOpenBottom() {
     final RenderBox? fb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -143,9 +175,6 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     final bool isReadOnly = (widget.decoration?.readOnly ?? false) ||
         (widget.decoration?.fieldReadOnly ?? false);
 
-    // If text field is editable, account for soft keyboard height (~280px)
-    // even before viewInsets.bottom updates so overlay opens above instead of
-    // getting covered when keyboard slides up.
     final double keyboardH = mq.viewInsets.bottom > 0
         ? mq.viewInsets.bottom
         : (isReadOnly ? 0.0 : 280.0);
@@ -161,6 +190,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     return spaceBelow >= intended || spaceBelow >= spaceAbove;
   }
 
+  /// Calculates max height allowed for the overlay constrained by screen space.
   double calculateMaxHeight(bool isLoading, bool isBottom) {
     final double screen = _availableScreenHeight(isBottom);
     final double userMax = _requestedOverlayHeight(isLoading);
@@ -168,7 +198,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     return result.clamp(0.0, double.infinity);
   }
 
-  /// Physical screen space available above or below the field.
+  /// Physical screen space available above or below the target field.
   double _availableScreenHeight(bool isBottom) {
     final RenderBox? fb =
         widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -195,17 +225,14 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     }
 
     if (isBottom) {
-      // Space from the BOTTOM of the field to top of keyboard
       final double fieldBottom = offset.dy + fieldH;
       return (usableH - fieldBottom - safeMargin - gap)
           .clamp(0.0, double.infinity);
     } else {
-      // Space from screen top to the TOP of the field
       return (offset.dy - safeMargin - gap).clamp(0.0, double.infinity);
     }
   }
 
-  /// Determine whether dropdown opens below or above the text field.
   void checkRenderObjects() {
     if (!mounted) return;
     final bool newBottom = computeShouldOpenBottom();
@@ -215,21 +242,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     }
   }
 
-  @override
-  void didUpdateWidget(covariant OverlayBuilder<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _scheduleOverlayMeasurement();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    displayOverlayBottomNotifier.dispose();
-    fieldHeightNotifier.dispose();
-    fieldWidthNotifier.dispose();
-    super.dispose();
-  }
-
+  /// Computes target offset for CompositedTransformFollower.
   Offset setOffset(bool isBottom) {
     final double dx = widget.dropdownOffset?.dx ?? 0;
     if (isBottom) {
@@ -252,6 +265,18 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     }
   }
 
+  BoxDecoration menuDecoration() {
+    if (widget.decoration?.menuDecoration != null) {
+      return widget.decoration!.menuDecoration!;
+    }
+    return BoxDecoration(
+        color: Colors.grey, borderRadius: BorderRadius.circular(5));
+  }
+
+  // ===========================================================================
+  // ROOT OVERLAY BUILD METHOD
+  // ===========================================================================
+
   @override
   Widget build(BuildContext context) {
     _measureField();
@@ -261,26 +286,24 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
 
     final bool isBottom = computeShouldOpenBottom();
 
+    // PERFORMANCE OPTIMIZATION: Only merge layout & items notifiers here.
+    // focusedIndexNotifier and selectedItemsNotifier are deliberately excluded
+    // so arrow keypresses do NOT rebuild the entire overlay shell!
     return AnimatedBuilder(
       animation: Listenable.merge([
         widget.itemsNotifier,
-        widget.focusedIndexNotifier,
-        widget.selectedItemsNotifier,
         widget.isApiLoadingNotifier,
         displayOverlayBottomNotifier,
         fieldHeightNotifier,
         fieldWidthNotifier,
       ]),
       builder: (context, child) {
-        // Re-check attachment inside the builder callback
         final RenderBox? rb =
             widget.fieldKey.currentContext?.findRenderObject() as RenderBox?;
         if (rb == null || !rb.attached) return const SizedBox.shrink();
 
         final currentItems = widget.itemsNotifier.value;
         final isLoading = widget.isApiLoadingNotifier.value;
-        final fIndex = widget.focusedIndexNotifier.value;
-        final sItems = widget.selectedItemsNotifier.value;
 
         final double maxH = calculateMaxHeight(isLoading, isBottom);
         final double w = fieldWidthNotifier.value > 0
@@ -323,7 +346,7 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                               ? loaderWidget(currentItems, isLoading)
                               : currentItems.isEmpty
                                   ? emptyErrorWidget()
-                                  : uiListWidget(currentItems, fIndex, sItems),
+                                  : uiListWidget(currentItems),
                         ),
                       ),
                     ),
@@ -337,7 +360,11 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
     );
   }
 
-  Widget uiListWidget(List<T> currentItems, int fIndex, List<T> sItems) {
+  // ===========================================================================
+  // OVERLAY CONTENT BUILDERS
+  // ===========================================================================
+
+  Widget uiListWidget(List<T> currentItems) {
     return NotificationListener<OverscrollIndicatorNotification>(
       onNotification: (notification) {
         notification.disallowIndicator();
@@ -352,11 +379,11 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                   key: widget.addButtonKey,
                   child:
                       widget.addButton ?? SizedBox(key: widget.addButtonKey)),
-          const SizedBox(height: 2),
+          if (widget.decoration?.canShowButton ?? false)
+            if (widget.addButton != null) const SizedBox(height: 2),
           Flexible(
             child: Listener(
               onPointerSignal: (event) {
-                // Reuse the timer field — do NOT create a new instance here
                 _hoverScrollTimer.run(() {
                   if (!mounted) return;
                   RenderBox? renderBox = widget.itemListKey.currentContext
@@ -372,109 +399,42 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
                   widget.changeIndex(scrollIndex);
                 });
               },
-              child: ListView.builder(
-                controller: widget.scrollController,
-                shrinkWrap: true,
-                physics: const ClampingScrollPhysics(),
-                addAutomaticKeepAlives: false,
-                addRepaintBoundaries: false,
-                padding: widget.decoration?.listPadding ?? EdgeInsets.zero,
-                itemCount: currentItems.length,
-                itemBuilder: (_, index) {
-                  final bool selected = fIndex == index;
-                  return MouseRegion(
-                    onHover: (event) {
-                      // Guard: only call if value actually changes
-                      if (widget.isKeyboardNavigationNotifier.value) {
-                        widget.changeKeyBool(false);
-                      }
-                    },
-                    onEnter: (event) {
-                      // Guard: only update index if not in keyboard nav mode
-                      if (!widget.isKeyboardNavigationNotifier.value &&
-                          fIndex != index) {
-                        widget.changeIndex(index);
-                      }
-                    },
-                    child: InkWell(
-                      key: fIndex == index ? widget.itemListKey : null,
-                      onTap: () => widget.onItemSelected(currentItems[index]),
-                      child: Container(
-                        padding: widget.decoration?.itemPadding,
-                        decoration: selected
-                            ? widget.decoration?.focusedItemDecoration
-                            : widget.decoration?.unfocusedItemDecoration,
-                        child: widget.isMultiSelect
-                            ? Row(
-                                children: [
-                                  // Keep the row as the primary tap target so
-                                  // custom indicators and native icons follow
-                                  // the same selection path.
-                                  Expanded(
-                                    child: widget.listItemBuilder(
-                                      context,
-                                      currentItems[index],
-                                      selected,
-                                    ),
-                                  ),
-                                  if (widget.decoration
-                                          ?.multiSelectCheckBuilder !=
-                                      null)
-                                    widget.decoration!.multiSelectCheckBuilder!(
-                                        context,
-                                        isItemSelected(
-                                            index, currentItems, sItems))
-                                  else if (widget.isMultiSelect)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16),
-                                      child: Icon(
-                                        isItemSelected(
-                                                index, currentItems, sItems)
-                                            ? (widget.decoration
-                                                    ?.multiSelectCheckedIcon ??
-                                                Icons.check_box)
-                                            : (widget.decoration
-                                                    ?.multiSelectUncheckedIcon ??
-                                                Icons.check_box_outline_blank),
-                                        size: 20,
-                                        color: isItemSelected(
-                                                index, currentItems, sItems)
-                                            ? (widget.decoration
-                                                    ?.multiSelectCheckedIconColor ??
-                                                Colors.blue)
-                                            : (widget.decoration
-                                                    ?.multiSelectUncheckedIconColor ??
-                                                Colors.grey.shade400),
-                                      ),
-                                    ),
-                                ],
-                              )
-                            : widget.listItemBuilder(
-                                context,
-                                currentItems[index],
-                                selected,
-                              ),
-                      ),
-                    ),
-                  );
-                },
+              child: MediaQuery.removePadding(
+                context: context,
+                removeTop: true,
+                removeBottom: true,
+                child: ListView.builder(
+                  controller: widget.scrollController,
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(),
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: false,
+                  padding: widget.decoration?.listPadding ?? EdgeInsets.zero,
+                  itemCount: currentItems.length,
+                  itemBuilder: (_, index) {
+                    return _DropdownListItemTile<T>(
+                      index: index,
+                      item: currentItems[index],
+                      isMultiSelect: widget.isMultiSelect,
+                      focusedIndexNotifier: widget.focusedIndexNotifier,
+                      selectedItemsNotifier: widget.selectedItemsNotifier,
+                      isKeyboardNavigationNotifier:
+                          widget.isKeyboardNavigationNotifier,
+                      changeIndex: widget.changeIndex,
+                      changeKeyBool: widget.changeKeyBool,
+                      onItemSelected: widget.onItemSelected,
+                      listItemBuilder: widget.listItemBuilder,
+                      decoration: widget.decoration,
+                      itemListKey: widget.itemListKey,
+                    );
+                  },
+                ),
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  bool isItemSelected(int index, List<T> currentItems, List<T> sItems) =>
-      sItems.contains(currentItems[index]);
-
-  BoxDecoration menuDecoration() {
-    if (widget.decoration?.menuDecoration != null)
-      return widget.decoration!.menuDecoration!;
-    return BoxDecoration(
-        color: Colors.grey, borderRadius: BorderRadius.circular(5));
   }
 
   Widget emptyErrorWidget() {
@@ -514,6 +474,119 @@ class _OverlayOutBuilderState<T> extends State<OverlayBuilder<T>>
   }
 }
 
+// =============================================================================
+// PERFORMANCE ISOLATED ITEM TILE
+// =============================================================================
+
+/// Performance-isolated list tile widget for dropdown rows.
+///
+/// Listens to [focusedIndexNotifier] and [selectedItemsNotifier] locally so that
+/// keyboard focus changes or checking a multi-select box only rebuilds the specific
+/// affected item tile rather than the whole list or overlay menu.
+class _DropdownListItemTile<T> extends StatelessWidget {
+  final int index;
+  final T item;
+  final bool isMultiSelect;
+  final ValueNotifier<int> focusedIndexNotifier;
+  final ValueNotifier<List<T>> selectedItemsNotifier;
+  final ValueNotifier<bool> isKeyboardNavigationNotifier;
+  final Function(int) changeIndex;
+  final Function(bool) changeKeyBool;
+  final Function(T) onItemSelected;
+  final ListItemBuilder<T> listItemBuilder;
+  final SearchFieldDropdownDecoration? decoration;
+  final GlobalKey itemListKey;
+
+  const _DropdownListItemTile({
+    super.key,
+    required this.index,
+    required this.item,
+    required this.isMultiSelect,
+    required this.focusedIndexNotifier,
+    required this.selectedItemsNotifier,
+    required this.isKeyboardNavigationNotifier,
+    required this.changeIndex,
+    required this.changeKeyBool,
+    required this.onItemSelected,
+    required this.listItemBuilder,
+    required this.decoration,
+    required this.itemListKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: focusedIndexNotifier,
+      builder: (context, fIndex, child) {
+        final bool isFocused = fIndex == index;
+        return ValueListenableBuilder<List<T>>(
+          valueListenable: selectedItemsNotifier,
+          builder: (context, sItems, child) {
+            final bool isChecked = sItems.contains(item);
+            return MouseRegion(
+              onHover: (event) {
+                if (isKeyboardNavigationNotifier.value) {
+                  changeKeyBool(false);
+                }
+              },
+              onEnter: (event) {
+                if (!isKeyboardNavigationNotifier.value && fIndex != index) {
+                  changeIndex(index);
+                }
+              },
+              child: InkWell(
+                key: isFocused ? itemListKey : null,
+                onTap: () => onItemSelected(item),
+                child: Container(
+                  padding: decoration?.itemPadding,
+                  decoration: isFocused
+                      ? decoration?.focusedItemDecoration
+                      : decoration?.unfocusedItemDecoration,
+                  child: isMultiSelect
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: listItemBuilder(
+                                context,
+                                item,
+                                isFocused,
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Icon(
+                                isChecked
+                                    ? Icons.check_box
+                                    : Icons.check_box_outline_blank,
+                                size: 20,
+                                color: isChecked
+                                    ? Colors.blue
+                                    : Colors.grey.shade400,
+                              ),
+                            ),
+                          ],
+                        )
+                      : listItemBuilder(
+                          context,
+                          item,
+                          isFocused,
+                        ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+// =============================================================================
+// DEBOUNCE / RATE-LIMIT TIMER HELPER
+// =============================================================================
+
+/// Lightweight timer wrapper for debouncing search inputs and rate-limiting scroll hovers.
 class SearchTimerMethod {
   final int milliseconds;
   Timer? _timer;

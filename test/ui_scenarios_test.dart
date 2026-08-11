@@ -19,12 +19,26 @@ void main() {
     String? initialItem,
     List<String> items = const ['Option A', 'Option B', 'Option C', 'Option D'],
   }) {
-    return SearchFieldDropdown<String>(
+    if (onItemsChanged != null) {
+      return SearchFieldDropdown<String>.multiSelection(
+        controller: controller,
+        item: items,
+        onItemsChanged: onItemsChanged,
+        decoration: decoration,
+        listItemBuilder: (context, item, isSelected) {
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(item, key: ValueKey<String>('item-$item')),
+          );
+        },
+        selectedItemBuilder: (context, item) => Text(item),
+      );
+    }
+    return SearchFieldDropdown<String>.singleSelection(
       controller: controller,
       initialItem: initialItem,
       item: items,
       onChanged: onChanged,
-      onItemsChanged: onItemsChanged,
       decoration: decoration,
       listItemBuilder: (context, item, isSelected) {
         return Padding(

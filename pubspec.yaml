@@ -12,7 +12,7 @@ issue_tracker: https://github.com/sumit-home2904/search_field_dropdown/issues
 Publisher: Sumit Sharma
 license: MIT
 
-version: 2.0.0
+version: 2.0.1
 
 environment:
   sdk: ^3.5.3

@@ -229,11 +229,11 @@ class _DropDownClassState extends State<DropDownClass> {
                     }).toList();
                   },
                   listItemBuilder: (context, item, isSelected) {
-                    int index = countryList.indexOf(item);
                     return Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 5, vertical: 5),
-                      margin: EdgeInsets.fromLTRB(5, index == 0 ? 7 : 2, 5, 1),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                           color: isSelected ? Colors.green : Colors.transparent,
                           borderRadius: BorderRadius.circular(2)),
@@ -264,6 +264,8 @@ class _DropDownClassState extends State<DropDownClass> {
                   controller: multiCityController,
                   item: cityList,
                   decoration: SearchFieldDropdownDecoration(
+                    listPadding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
                     showSelectedItemsInField: false,
                     textStyle: const TextStyle(
                         fontSize: 12, fontWeight: FontWeight.w400),

@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+/// Smooth fade and size animation wrapper for opening/closing the dropdown overlay menu.
 class AnimatedSection extends StatefulWidget {
+  /// Controls whether the animation expands (`true`) or collapses (`false`).
   final bool expand;
+
+  /// Child widget wrapped by fade and scale transitions.
   final Widget child;
+
+  /// Axis alignment for scale transition (1.0 for opening downward, -1.0 for opening upward).
   final double axisAlignment;
+
+  /// Callback executed when collapse animation finishes dismissing.
   final VoidCallback animationDismissed;
 
   const AnimatedSection({

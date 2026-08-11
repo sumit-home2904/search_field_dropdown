@@ -33,7 +33,7 @@ SearchFieldDropdown widget implementation in Flutter. This widget provides a cus
 
 ```yaml
 dependencies:
-  search_field_dropdown: ^2.0.0
+  search_field_dropdown: ^2.0.1
 ```
 
 2. Import the package and use it in your Flutter App.
@@ -273,7 +273,7 @@ SearchFieldDropdown<String>.multiSelection(
 )
 ```
 
-> **Note:** `listItemBuilder`'s third parameter (`isActive`) represents the currently active row, which is useful for keyboard navigation and hover styling. To customize the multi-select checked state, use `decoration.multiSelectCheckBuilder`.
+> **Note:** `listItemBuilder`'s third parameter (`isSelected`) represents the currently active row, which is useful for keyboard navigation and hover styling.
 
 ---
 
@@ -310,13 +310,7 @@ SearchFieldDropdown<String>.multiSelection(
 
 | Property | Type | Description |
 |---|---|---|
-| `isMultiSelect` | `bool?` | Enables multi-select capabilities with internal checkbox support. |
 | `showSelectedItemsInField` | `bool?` | Controls whether selected multi-select values are rendered back into the field text. |
-| `multiSelectCheckBuilder` | `MultiSelectCheckBuilder?` | Custom trailing indicator for each multi-select row. |
-| `multiSelectCheckedIcon` | `IconData?` | Icon used for selected items when no custom check builder is supplied. |
-| `multiSelectUncheckedIcon` | `IconData?` | Icon used for unselected items when no custom check builder is supplied. |
-| `multiSelectCheckedIconColor` | `Color?` | Color for the selected icon state. |
-| `multiSelectUncheckedIconColor` | `Color?` | Color for the unselected icon state. |
 | `canShowButton` | `bool?` | Toggles the visibility of the optional add button area inside the overlay. |
 | `fieldReadOnly` | `bool?` | Makes the internal `TextFormField` readonly. |
 | `readOnly` | `bool?` | Prevents the dropdown overlay from opening on tap. |

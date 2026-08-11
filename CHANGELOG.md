@@ -1,3 +1,9 @@
+# 2.0.1
+- Exclusive `.singleSelection` & `.multiSelection` constructors with strict parameter segregation.
+- Removed redundant `isMultiSelect` & `multiSelectCheckBuilder` decoration properties.
+- Optimized overlay rendering performance & eliminated unnecessary rebuilds.
+- Clean code restructuring & comprehensive English documentation.
+
 # 2.0.0
 - Added `SearchFieldDropdown.singleSelection` & `SearchFieldDropdown.multiSelection` constructors
 - Auto unfocus keyboard on single item selection

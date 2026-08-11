@@ -31,14 +31,29 @@ void main() {
     List<String>? initialItems,
     List<String> items = const ['Alpha', 'Beta', 'Gamma'],
   }) {
-    return SearchFieldDropdown<String>(
+    if (onItemsChanged != null || initialItems != null) {
+      return SearchFieldDropdown<String>.multiSelection(
+        controller: controller,
+        focusNode: focusNode,
+        initialItems: initialItems,
+        item: items,
+        onChanged: onChanged,
+        onItemsChanged: onItemsChanged,
+        decoration: decoration,
+        listItemBuilder: (context, item, isSelected) {
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(item, key: ValueKey<String>('item-$item')),
+          );
+        },
+      );
+    }
+    return SearchFieldDropdown<String>.singleSelection(
       controller: controller,
       focusNode: focusNode,
       initialItem: initialItem,
-      initialItems: initialItems,
       item: items,
       onChanged: onChanged,
-      onItemsChanged: onItemsChanged,
       decoration: decoration,
       listItemBuilder: (context, item, isSelected) {
         return Padding(
@@ -46,7 +61,6 @@ void main() {
           child: Text(item, key: ValueKey<String>('item-$item')),
         );
       },
-      selectedItemBuilder: (context, item) => Text(item),
     );
   }
 
@@ -110,9 +124,6 @@ void main() {
         child: buildDropdown(
           onChanged: (value) => changedItem = value,
           onItemsChanged: (values) => changedItems = List<String>.from(values),
-          decoration: const SearchFieldDropdownDecoration(
-            isMultiSelect: true,
-          ),
         ),
       ),
     );
@@ -155,9 +166,6 @@ void main() {
         child: buildDropdown(
           focusNode: focusNode,
           initialItems: const ['Alpha'],
-          decoration: const SearchFieldDropdownDecoration(
-            isMultiSelect: true,
-          ),
         ),
       ),
     );
@@ -175,20 +183,11 @@ void main() {
     expect(field.controller?.text, 'Alpha, Beta');
   });
 
-  testWidgets('multiselect renders checkbox builder when enabled',
-      (tester) async {
+  testWidgets('multiselect renders checkboxes when enabled', (tester) async {
     await tester.pumpWidget(
       buildTestApp(
         child: buildDropdown(
-          decoration: SearchFieldDropdownDecoration(
-            isMultiSelect: true,
-            multiSelectCheckBuilder: (context, selected) {
-              return Checkbox(
-                value: selected,
-                onChanged: null,
-              );
-            },
-          ),
+          onItemsChanged: (_) {},
         ),
       ),
     );
@@ -196,7 +195,7 @@ void main() {
     await tester.tap(find.byType(TextFormField));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Checkbox), findsWidgets);
+    expect(find.byIcon(Icons.check_box_outline_blank), findsWidgets);
   });
 
   testWidgets('dropdownOffset from decoration is applied to overlay position',
@@ -424,7 +423,7 @@ void main() {
                         Expanded(child: Text(rowLabel)),
                         SizedBox(
                           width: 200,
-                          child: SearchFieldDropdown<String>(
+                          child: SearchFieldDropdown<String>.singleSelection(
                             item: const ['Option 1', 'Option 2'],
                             listItemBuilder: (ctx, item, sel) => Padding(
                               padding: const EdgeInsets.all(8),
@@ -504,7 +503,7 @@ void main() {
                     padding: const EdgeInsets.all(8),
                     child: SizedBox(
                       width: 200,
-                      child: SearchFieldDropdown<String>(
+                      child: SearchFieldDropdown<String>.singleSelection(
                         item: const ['A', 'B'],
                         listItemBuilder: (ctx, item, sel) => Padding(
                           padding: const EdgeInsets.all(8),
@@ -554,7 +553,7 @@ void main() {
                   return SizedBox(
                     key: ValueKey<String>(rowLabel),
                     width: 200,
-                    child: SearchFieldDropdown<String>(
+                    child: SearchFieldDropdown<String>.singleSelection(
                       item: const ['X', 'Y'],
                       listItemBuilder: (ctx, item, sel) => Padding(
                         padding: const EdgeInsets.all(8),
@@ -595,7 +594,7 @@ void main() {
             alignment: Alignment.bottomCenter,
             child: SizedBox(
               width: 200,
-              child: SearchFieldDropdown<String>(
+              child: SearchFieldDropdown<String>.singleSelection(
                 item: const ['Option 1', 'Option 2'],
                 decoration: const SearchFieldDropdownDecoration(
                   dropdownOffset: Offset(0, 56),
